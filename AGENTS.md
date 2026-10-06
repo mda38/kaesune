@@ -14,9 +14,9 @@
 
 ## Code Quality
 
-- ローカル確認、Git Hooks、CI、テスト運用の詳細は [Development Docs](/Users/maichi/Desktop/money-app/apps/docs/src/content/development/index.md) を参照する。
-- 仕様書・設計資料・開発ルールは `apps/docs/src/content/` にまとめ、ブラウザでは Docs アプリから確認する。
-- 環境変数を追加・変更・削除するときは、同じ変更で [環境変数の設定](/Users/maichi/Desktop/money-app/apps/docs/src/pages/development/environment-variables.astro)、対応する `*.example`、アプリごとの README を更新する。
+- ローカル確認、Git Hooks、CI、テスト運用の詳細は [Development Docs](docs/development/index.md) を参照する。
+- 仕様書・設計資料・開発ルールは `docs/` にまとめ、GitHub またはエディタで確認する。
+- 環境変数を追加・変更・削除するときは、同じ変更で [環境変数の設定](docs/development/environment-variables.md)、対応する `*.example`、アプリごとの README を更新する。
 
 ## 文書言語
 
