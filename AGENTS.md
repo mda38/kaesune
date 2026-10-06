@@ -12,10 +12,6 @@
 - 関係のないリファクタリングは避ける。
 - 既存のアーキテクチャ、命名、フォルダ構成を優先する。
 
-## Skills
-
-- コードまたは設定を変更するタスクでは `agent-workflow` Skill に従う。
-
 ## Code Quality
 
 - ローカル確認、Git Hooks、CI、テスト運用の詳細は [Development Docs](/Users/maichi/Desktop/money-app/apps/docs/src/content/development/index.md) を参照する。
