@@ -1,0 +1,91 @@
+const apiOrigin = (
+  import.meta.env.VITE_API_ORIGIN ?? "http://localhost:8787"
+).replace(/\/$/, "");
+
+type ErrorResponse = { message?: string };
+
+export class ApiRequestError extends Error {
+  readonly status: number;
+
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function request<T>(
+  path: string,
+  options: RequestInit = {},
+  errorMessage: string,
+): Promise<T> {
+  const response = await fetch(`${apiOrigin}${path}`, {
+    credentials: "include",
+    ...options,
+  });
+
+  if (!response.ok) {
+    const body = (await response
+      .json()
+      .catch(() => null)) as ErrorResponse | null;
+    throw new ApiRequestError(response.status, body?.message ?? errorMessage);
+  }
+
+  return response.json() as Promise<T>;
+}
+
+export function get<T>(path: string) {
+  return request<T>(path, {}, "データの取得に失敗しました。");
+}
+
+export function post<T>(path: string, body: unknown) {
+  return request<T>(
+    path,
+    {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    "データの作成に失敗しました。",
+  );
+}
+
+export function put<T>(path: string, body: unknown) {
+  return request<T>(
+    path,
+    {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    "データの更新に失敗しました。",
+  );
+}
+
+export function patch<T>(path: string, body: unknown) {
+  return request<T>(
+    path,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    },
+    "データの更新に失敗しました。",
+  );
+}
+
+export async function del(path: string): Promise<void> {
+  const response = await fetch(`${apiOrigin}${path}`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    const body = (await response
+      .json()
+      .catch(() => null)) as ErrorResponse | null;
+    throw new ApiRequestError(
+      response.status,
+      body?.message ?? "データの削除に失敗しました。",
+    );
+  }
+}
