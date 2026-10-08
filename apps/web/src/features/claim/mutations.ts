@@ -33,7 +33,8 @@ export const useDeleteClaim = () => {
   return useMutation({
     mutationFn: ({ groupId, claimId }: ClaimTarget) =>
       deleteGroupClaim(groupId, claimId),
-    onSuccess: async (_data, { groupId }) => {
+    onSuccess: async (_data, { groupId, claimId }) => {
+      client.setQueryData(claimQueries.detail(groupId, claimId).queryKey, null);
       await Promise.all([
         client.invalidateQueries({
           queryKey: claimQueries.list(groupId).queryKey,

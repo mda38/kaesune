@@ -21,7 +21,17 @@ describe("API documentation and authentication boundary", () => {
     expect(response.status).toBe(200);
     const document = (await response.json()) as {
       openapi: string;
-      paths: Record<string, unknown>;
+      paths: Record<
+        string,
+        {
+          get?: {
+            responses: Record<
+              string,
+              { content: Record<string, { schema: { $ref?: string } }> }
+            >;
+          };
+        }
+      >;
       components?: { schemas?: Record<string, unknown> };
     };
     expect(document.openapi).toBe("3.0.3");
@@ -31,6 +41,11 @@ describe("API documentation and authentication boundary", () => {
     expect(document.paths).toHaveProperty("/groups/{groupId}/claims");
     expect(document.paths).toHaveProperty("/groups/{groupId}/claims/{claimId}");
     expect(document.components?.schemas).toHaveProperty("Claim");
+    expect(
+      document.paths["/groups/{groupId}/claims/{claimId}"]?.get?.responses[
+        "200"
+      ]?.content["application/json"]?.schema,
+    ).toEqual({ $ref: "#/components/schemas/ClaimListItem" });
   });
 
   it("serves Swagger UI and keeps business resources protected by the session", async () => {

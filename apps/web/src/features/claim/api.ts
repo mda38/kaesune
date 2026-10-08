@@ -1,3 +1,4 @@
+import { ApiRequestError } from "@/lib/api-client";
 import { del, get, patch } from "@/lib/api-client";
 import type { Claim, ClaimListItem } from "@/features/claim/types";
 
@@ -21,4 +22,20 @@ export const updateGroupClaimStatus = (
 
 export const deleteGroupClaim = (groupId: string, claimId: string) => {
   return del(`/api/groups/${groupId}/claims/${claimId}`);
+};
+
+export const getGroupClaim = async (
+  groupId: string,
+  claimId: string,
+  signal?: AbortSignal,
+) => {
+  try {
+    return await get<ClaimListItem>(
+      `/api/groups/${groupId}/claims/${claimId}`,
+      signal,
+    );
+  } catch (error) {
+    if (error instanceof ApiRequestError && error.status === 404) return null;
+    throw error;
+  }
 };
