@@ -16,10 +16,13 @@ export const claimQueries = {
         groupId && claimId
           ? ({ signal }) => getGroupClaim(groupId, claimId, signal)
           : skipToken,
-      initialData: () =>
-        client
-          ?.getQueryData<ClaimListItem[]>(["groups", groupId, "claims"])
-          ?.find((item) => item.id === claimId),
+      initialData: () => {
+        const listKey = ["groups", groupId, "claims"];
+        if (client?.getQueryState(listKey)?.isInvalidated) return undefined;
+        return client
+          ?.getQueryData<ClaimListItem[]>(listKey)
+          ?.find((item) => item.id === claimId);
+      },
       initialDataUpdatedAt: () =>
         client?.getQueryState(["groups", groupId, "claims"])?.dataUpdatedAt,
     }),

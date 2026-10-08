@@ -19,10 +19,13 @@ export const withdrawalQueries = {
         groupId && withdrawalId
           ? ({ signal }) => getGroupWithdrawal(groupId, withdrawalId, signal)
           : skipToken,
-      initialData: () =>
-        client
-          ?.getQueryData<Withdrawal[]>(["groups", groupId, "withdrawals"])
-          ?.find((item) => item.id === withdrawalId),
+      initialData: () => {
+        const listKey = ["groups", groupId, "withdrawals"];
+        if (client?.getQueryState(listKey)?.isInvalidated) return undefined;
+        return client
+          ?.getQueryData<Withdrawal[]>(listKey)
+          ?.find((item) => item.id === withdrawalId);
+      },
       initialDataUpdatedAt: () =>
         client?.getQueryState(["groups", groupId, "withdrawals"])
           ?.dataUpdatedAt,
