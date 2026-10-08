@@ -24,6 +24,7 @@
 
 - [CI 品質ゲート](development/ci-quality-gate.md)
 - [コード品質チェック運用](development/code-quality-checks.md)
+- [フロントエンドコーディング規約](development/frontend-coding-guidelines.md)
 - [ログインできるまでの設定マップ](development/environment-variables.md)
 - [Development Docs](development/index.md)
 - [ローカル検証手順](development/local-verification.md)
