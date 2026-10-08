@@ -4,16 +4,16 @@
 
 ## 責務と配置
 
-| 配置                                           | 責務                                                                     |
-| ---------------------------------------------- | ------------------------------------------------------------------------ |
-| `lib/api-client.ts`                            | Cookie を含む HTTP 通信、`ApiRequestError`、`AbortSignal` の受け渡し     |
-| `lib/query-client.ts`                          | QueryClient の作成、retry・refetch・キャッシュ保持期間、401 の共通通知   |
-| `features/*/api.ts`                            | React に依存しない API 関数、レスポンスの取り出し                        |
-| `features/*/queries.ts`                        | リソースを所有する feature ごとの query key と `queryOptions`            |
-| `features/*/mutations.ts`                      | 更新用 hook と、関連 Query の invalidation                               |
-| `features/auth/AuthenticatedQueryProvider.tsx` | 認証中の QueryClient の寿命、401 後のログインへの遷移                    |
-| `features/group/GroupProvider.tsx`             | `/api/me` の Query から現在のユーザー・グループを Context で提供         |
-| Page・Component                                | Query 結果の表示、入力検証、ローカル入力状態、確認操作、成功後の画面遷移 |
+| 配置                                             | 責務                                                                     |
+| ------------------------------------------------ | ------------------------------------------------------------------------ |
+| `lib/api-client.ts`                              | Cookie を含む HTTP 通信、`ApiRequestError`、`AbortSignal` の受け渡し     |
+| `lib/query-client.ts`                            | QueryClient の作成、retry・refetch・キャッシュ保持期間、401 の共通通知   |
+| `features/*/api.ts`                              | React に依存しない API 関数、レスポンスの取り出し                        |
+| `features/*/queries.ts`                          | リソースを所有する feature ごとの query key と `queryOptions`            |
+| `features/*/mutations.ts`                        | 更新用 hook と、関連 Query の invalidation                               |
+| `features/auth/authenticated-query-provider.tsx` | 認証中の QueryClient の寿命、401 後のログインへの遷移                    |
+| `features/group/group-provider.tsx`              | `/api/me` の Query から現在のユーザー・グループを Context で提供         |
+| Page・Component                                  | Query 結果の表示、入力検証、ローカル入力状態、確認操作、成功後の画面遷移 |
 
 取得結果は Query キャッシュを正本とし、Context・Zustand・Page の state にコピーしない。入力途中の値、フィルター、メニュー開閉、編集中の配分は React のローカル state に置く。汎用 resource hook や repository 層は設けず、取得は `useQuery(featureQueries.list(groupId))`、更新は feature の専用 Mutation hook を利用する。
 

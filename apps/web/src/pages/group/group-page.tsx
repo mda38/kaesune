@@ -1,9 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
-import { groupQueries } from "../../features/group/queries";
-import { Heading, Screen } from "../../layouts";
-import { Avatar, Badge, Card } from "../../components/ui";
-import { useGroupContext } from "../../features/group/useGroupContext";
+import { QueryErrorNotice } from "@/components/ui/query-error-notice";
+import { groupQueries } from "@/features/group/queries";
+import { Heading } from "@/layouts/heading";
+import { Screen } from "@/layouts/screen";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { useGroupContext } from "@/features/group/use-group-context";
 
 export function GroupPage() {
   const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();

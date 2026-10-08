@@ -1,8 +1,9 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
 import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
-import { authClient } from "../../features/auth/auth-client";
-import { Card, Icon } from "../../components/ui";
+import { authClient } from "@/features/auth/auth-client";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
 
 export function LoginPage() {
   const navigate = useNavigate();

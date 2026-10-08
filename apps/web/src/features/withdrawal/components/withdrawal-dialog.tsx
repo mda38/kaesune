@@ -7,12 +7,12 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { walletQueries } from "../../wallet/queries";
-import { useCreateWithdrawal } from "../mutations";
-import { QueryErrorNotice } from "../../../components/ui/QueryErrorNotice";
-import { useGroupContext } from "../../group/useGroupContext";
-import { Screen } from "../../../layouts";
-import { Card } from "../../../components/ui";
+import { walletQueries } from "@/features/wallet/queries";
+import { useCreateWithdrawal } from "@/features/withdrawal/mutations";
+import { QueryErrorNotice } from "@/components/ui/query-error-notice";
+import { useGroupContext } from "@/features/group/use-group-context";
+import { Screen } from "@/layouts/screen";
+import { Card } from "@/components/ui/card";
 
 export type PaymentDialogHandle = {
   open: () => void;
@@ -300,12 +300,12 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
   },
 );
 
-function formatAmount(amount: string) {
+const formatAmount = (amount: string) => {
   return amount.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-}
+};
 
-function today() {
+const today = () => {
   const date = new Date();
   const offset = date.getTimezoneOffset() * 60_000;
   return new Date(date.getTime() - offset).toISOString().slice(0, 10);
-}
+};

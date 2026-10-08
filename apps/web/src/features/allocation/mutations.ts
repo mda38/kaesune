@@ -3,11 +3,11 @@ import {
   createGroupWithdrawalClaims,
   replaceGroupWithdrawalAllocations,
   type AllocationInput,
-} from "./api";
-import { claimQueries } from "../claim/queries";
-import { withdrawalQueries } from "../withdrawal/queries";
+} from "@/features/allocation/api";
+import { claimQueries } from "@/features/claim/queries";
+import { withdrawalQueries } from "@/features/withdrawal/queries";
 
-export function useCreateWithdrawalClaims() {
+export const useCreateWithdrawalClaims = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: async ({
@@ -38,4 +38,4 @@ export function useCreateWithdrawalClaims() {
       ]);
     },
   });
-}
+};

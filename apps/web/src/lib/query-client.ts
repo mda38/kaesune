@@ -1,7 +1,7 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
-import { ApiRequestError } from "./api-client";
+import { ApiRequestError } from "@/lib/api-client";
 
-export function createQueryClient(onUnauthenticated: () => void) {
+export const createQueryClient = (onUnauthenticated: () => void) => {
   const handleError = (error: Error) => {
     if (error instanceof ApiRequestError && error.status === 401) {
       client.clear();
@@ -30,4 +30,4 @@ export function createQueryClient(onUnauthenticated: () => void) {
     },
   });
   return client;
-}
+};

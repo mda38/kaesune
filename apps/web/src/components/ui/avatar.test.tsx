@@ -2,7 +2,7 @@
 
 import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
-import { Avatar } from "./index";
+import { Avatar } from "@/components/ui/avatar";
 
 describe("Avatar", () => {
   it("指定した名前をアクセシブルなラベルとして表示する", () => {

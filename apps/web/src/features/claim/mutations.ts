@@ -1,12 +1,12 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { deleteGroupClaim, updateGroupClaimStatus } from "./api";
-import type { Claim } from "./types";
-import { claimQueries } from "./queries";
-import { withdrawalQueries } from "../withdrawal/queries";
+import { deleteGroupClaim, updateGroupClaimStatus } from "@/features/claim/api";
+import type { Claim } from "@/features/claim/types";
+import { claimQueries } from "@/features/claim/queries";
+import { withdrawalQueries } from "@/features/withdrawal/queries";
 
 type ClaimTarget = { groupId: string; claimId: string };
 
-export function useUpdateClaimStatus() {
+export const useUpdateClaimStatus = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -26,9 +26,9 @@ export function useUpdateClaimStatus() {
       ]);
     },
   });
-}
+};
 
-export function useDeleteClaim() {
+export const useDeleteClaim = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ groupId, claimId }: ClaimTarget) =>
@@ -44,4 +44,4 @@ export function useDeleteClaim() {
       ]);
     },
   });
-}
+};

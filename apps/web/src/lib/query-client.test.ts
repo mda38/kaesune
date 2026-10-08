@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { ApiRequestError } from "./api-client";
-import { createQueryClient } from "./query-client";
+import { ApiRequestError } from "@/lib/api-client";
+import { createQueryClient } from "@/lib/query-client";
 
 describe("createQueryClient", () => {
   const onUnauthenticated = vi.fn();

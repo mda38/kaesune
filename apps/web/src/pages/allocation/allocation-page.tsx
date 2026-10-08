@@ -1,16 +1,20 @@
+import { StatusCard } from "@/pages/allocation/status-card";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { withdrawalQueries } from "../../features/withdrawal/queries";
-import { walletQueries } from "../../features/wallet/queries";
-import { groupQueries } from "../../features/group/queries";
-import { useCreateWithdrawalClaims } from "../../features/allocation/mutations";
-import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { withdrawalQueries } from "@/features/withdrawal/queries";
+import { walletQueries } from "@/features/wallet/queries";
+import { groupQueries } from "@/features/group/queries";
+import { useCreateWithdrawalClaims } from "@/features/allocation/mutations";
+import { QueryErrorNotice } from "@/components/ui/query-error-notice";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import type { GroupMember } from "../../features/group/types";
-import type { Withdrawal } from "../../features/withdrawal/types";
-import { Screen } from "../../layouts";
-import { Avatar, Badge, Card, Icon } from "../../components/ui";
-import { useGroupContext } from "../../features/group/useGroupContext";
+import type { GroupMember } from "@/features/group/types";
+import type { Withdrawal } from "@/features/withdrawal/types";
+import { Screen } from "@/layouts/screen";
+import { Avatar } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { useGroupContext } from "@/features/group/use-group-context";
 
 type AllocationView = { member: GroupMember; amount: string };
 type AllocationOverride = {
@@ -336,10 +340,10 @@ export function AllocationPage() {
   );
 }
 
-function buildAllocations(
+const buildAllocations = (
   withdrawal: Withdrawal,
   members: GroupMember[],
-): AllocationView[] {
+): AllocationView[] => {
   if (withdrawal.status !== "unallocated") {
     const amountByMemberId = new Map(
       withdrawal.allocations.map((allocation) => [
@@ -354,12 +358,12 @@ function buildAllocations(
   }
   if (members.length === 0) return [];
   return buildEqualAllocations(withdrawal, members);
-}
+};
 
-function buildEqualAllocations(
+const buildEqualAllocations = (
   withdrawal: Withdrawal,
   members: GroupMember[],
-): AllocationView[] {
+): AllocationView[] => {
   const total = BigInt(withdrawal.amount);
   const memberCount = BigInt(members.length);
   const baseAmount = total / memberCount;
@@ -368,39 +372,12 @@ function buildEqualAllocations(
     member,
     amount: (baseAmount + (BigInt(index) < remainder ? 1n : 0n)).toString(),
   }));
-}
+};
 
-function parseAllocationAmount(amount: string) {
+const parseAllocationAmount = (amount: string) => {
   return /^(0|[1-9][0-9]*)$/.test(amount) ? BigInt(amount) : null;
-}
+};
 
-function formatYen(amount: bigint) {
+const formatYen = (amount: bigint) => {
   return `¥${amount.toLocaleString("ja-JP")}`;
-}
-
-function StatusCard({
-  loading = false,
-  message,
-  onRetry,
-}: {
-  loading?: boolean;
-  message: string;
-  onRetry?: () => void;
-}) {
-  return (
-    <Card className="p-4">
-      <p aria-busy={loading || undefined} className="text-sm" role="status">
-        {message}
-      </p>
-      {onRetry && (
-        <button
-          className="mt-3 text-sm font-bold underline"
-          onClick={onRetry}
-          type="button"
-        >
-          再試行
-        </button>
-      )}
-    </Card>
-  );
-}
+};

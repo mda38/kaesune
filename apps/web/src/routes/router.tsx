@@ -1,15 +1,15 @@
 import { createBrowserRouter } from "react-router-dom";
-import { RequireSession } from "./RequireSession";
-import { AllocationPage } from "../pages/allocation/AllocationPage";
-import { GroupPage } from "../pages/group/GroupPage";
-import { HomePage } from "../pages/home/HomePage";
-import { InvoiceDetailPage } from "../pages/invoices/InvoiceDetailPage";
-import { InvoicesPage } from "../pages/invoices/InvoicesPage";
-import { LoginPage } from "../pages/login/LoginPage";
-import { MypagePage } from "../pages/mypage/MypagePage";
-import { RecordsPage } from "../pages/records/RecordsPage";
-import { RecordDetailPage } from "../pages/records/RecordDetailPage";
-import { WalletsPage } from "../pages/wallets/WalletsPage";
+import { RequireSession } from "@/routes/require-session";
+import { AllocationPage } from "@/pages/allocation/allocation-page";
+import { GroupPage } from "@/pages/group/group-page";
+import { HomePage } from "@/pages/home/home-page";
+import { InvoiceDetailPage } from "@/pages/invoices/invoice-detail-page";
+import { InvoicesPage } from "@/pages/invoices/invoices-page";
+import { LoginPage } from "@/pages/login/login-page";
+import { MypagePage } from "@/pages/mypage/mypage-page";
+import { RecordsPage } from "@/pages/records/records-page";
+import { RecordDetailPage } from "@/pages/records/record-detail-page";
+import { WalletsPage } from "@/pages/wallets/wallets-page";
 
 export const router = createBrowserRouter([
   { path: "/", element: <LoginPage /> },
