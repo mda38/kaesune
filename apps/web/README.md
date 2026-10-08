@@ -11,6 +11,23 @@ pnpm --filter web dev
 
 `VITE_API_ORIGIN` には Backend Worker の URL を設定します。開発時の既定値は `http://localhost:8787` です。
 
+## テスト・型チェック
+
+```sh
+pnpm --filter web test
+pnpm --filter web test:watch
+pnpm --filter web typecheck
+```
+
+`test` は Vitest による単発実行、`test:watch` は変更を監視する継続実行です。
+外部 API・DB・認証情報は不要です。`typecheck` はアプリ、テスト、Vite 設定を検証します。
+ルートの `pnpm typecheck` からも Turborepo 経由で実行されます。
+
+テストは対象実装と同じディレクトリに `*.test.ts` / `*.test.tsx` として配置します。
+既定は `node` 環境で、DOM が必要なテストのみファイル先頭に
+`// @vitest-environment jsdom` を記載します。
+詳細は [テスト運用](../../docs/development/test-operations.md) を参照してください。
+
 ## Production
 
 本番では Web と API を単一の Cloudflare Worker で配信します。公開 URL は

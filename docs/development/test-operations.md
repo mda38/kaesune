@@ -9,6 +9,7 @@
 ## 現状
 
 - Backend には Vitest による unit test がある
+- Frontend には Vitest と React Testing Library による unit test がある
 - 重要な画面フローは、必要に応じて Playwright の固定 verification scenario として追加する
 - Browser verification はローカル環境の再現可能な fixture を使い、まず `pnpm verify:<feature>` として実行する
 - Browser verification は現時点では CI に載せず、ローカルで安定して再現できることを優先する
@@ -16,7 +17,28 @@
 ## ローカル運用
 
 - 実装中は、必要な範囲のテストをその都度ローカルで実行する
-- テスト基盤が整ったら、`watch` モードを使って継続的に確認する
+- Frontend は `pnpm --filter web test:watch` で変更を監視し、継続的に確認できる
+
+### Frontend unit test
+
+```sh
+pnpm --filter web test
+pnpm --filter web test:watch
+pnpm --filter web typecheck
+```
+
+- `test` は単発実行で、失敗時は非ゼロの終了コードを返す
+- 実行には外部 API・DB・認証情報を必要としない
+- テストは対象実装に隣接する `*.test.ts` / `*.test.tsx` に配置する
+- 検出対象は `apps/web/src` 配下のみで、Playwright verification は含めない
+- 純粋関数や DOM に依存しない状態管理は、既定の `node` 環境で検証する
+- DOM を使うコンポーネント・Hook は、ファイル先頭に `// @vitest-environment jsdom` を記載する
+- React の描画・操作には React Testing Library を使う。共通 setup が各テスト後に cleanup する
+- `describe`・`it`・`expect` などは `vitest` から明示的に import する
+- DOM の assertion には共通 setup で読み込む `@testing-library/jest-dom/vitest` の matcher を使える
+- `typecheck` はアプリ、テスト、共通 setup、Vite 設定を対象とする
+- ルートの `pnpm typecheck` と既存 CI の affected typecheck にも Frontend が含まれる
+- unit test の CI 実行、coverage 閾値の導入は別途対応する
 
 ### 実行の考え方
 
