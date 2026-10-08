@@ -7,16 +7,22 @@ import { groupQueries } from "@/features/group/queries";
 import { useCreateWithdrawalClaims } from "@/features/allocation/mutations";
 import { QueryErrorNotice } from "@/components/ui/query-error-notice";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import type { GroupMember } from "@/features/group/types";
-import type { Withdrawal } from "@/features/withdrawal/types";
 import { Screen } from "@/layouts/screen";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { useGroupContext } from "@/features/group/use-group-context";
+import {
+  buildAllocations,
+  buildEqualAllocations,
+  buildFullAmountAllocations,
+  isAllocationAmountInput,
+  parseAllocationAmount,
+  summarizeAllocations,
+  type AllocationView,
+} from "@/features/allocation/domain";
 
-type AllocationView = { member: GroupMember; amount: string };
 type AllocationOverride = {
   allocations: AllocationView[];
   selectedPreset: string | null;
@@ -81,22 +87,13 @@ export function AllocationPage() {
         ? "equal"
         : null);
   const withdrawalAmount = withdrawal ? BigInt(withdrawal.amount) : 0n;
-  const hasValidAllocationAmounts = allocations.every(
-    ({ amount }) => parseAllocationAmount(amount) !== null,
-  );
-  const allocationTotal = allocations.reduce((total, allocation) => {
-    return total + (parseAllocationAmount(allocation.amount) ?? 0n);
-  }, 0n);
-  const remainingAmount = withdrawalAmount - allocationTotal;
-  const claimTargets = allocations.filter(
-    ({ member, amount }) =>
-      (parseAllocationAmount(amount) ?? 0n) > 0n &&
-      (wallet?.ownerType === "shared" || member.id !== wallet?.ownerMemberId),
-  );
-  const canCreateClaims =
-    hasValidAllocationAmounts &&
-    remainingAmount === 0n &&
-    claimTargets.length > 0;
+  const {
+    hasValidAllocationAmounts,
+    allocationTotal,
+    remainingAmount,
+    claimTargets,
+    canCreateClaims,
+  } = summarizeAllocations(withdrawalAmount, allocations, wallet);
   const createClaims = () => {
     if (!currentGroup || !withdrawalId || isCreatingClaims || !canCreateClaims)
       return;
@@ -125,17 +122,14 @@ export function AllocationPage() {
   const applyFullAmountPreset = (memberId: string) => {
     if (!withdrawal) return;
     setAllocationOverride({
-      allocations: members.map((member) => ({
-        member,
-        amount: member.id === memberId ? withdrawalAmount.toString() : "0",
-      })),
+      allocations: buildFullAmountAllocations(withdrawal, members, memberId),
       selectedPreset: memberId,
       withdrawalId: withdrawal.id,
     });
   };
 
   const updateAllocationAmount = (memberId: string, amount: string) => {
-    if (!withdrawal || !/^\d*$/.test(amount)) return;
+    if (!withdrawal || !isAllocationAmountInput(amount)) return;
     setAllocationOverride({
       allocations: allocations.map((allocation) =>
         allocation.member.id === memberId
@@ -339,44 +333,6 @@ export function AllocationPage() {
     </Screen>
   );
 }
-
-const buildAllocations = (
-  withdrawal: Withdrawal,
-  members: GroupMember[],
-): AllocationView[] => {
-  if (withdrawal.status !== "unallocated") {
-    const amountByMemberId = new Map(
-      withdrawal.allocations.map((allocation) => [
-        allocation.memberId,
-        allocation.amount,
-      ]),
-    );
-    return members.map((member) => ({
-      member,
-      amount: amountByMemberId.get(member.id) ?? "0",
-    }));
-  }
-  if (members.length === 0) return [];
-  return buildEqualAllocations(withdrawal, members);
-};
-
-const buildEqualAllocations = (
-  withdrawal: Withdrawal,
-  members: GroupMember[],
-): AllocationView[] => {
-  const total = BigInt(withdrawal.amount);
-  const memberCount = BigInt(members.length);
-  const baseAmount = total / memberCount;
-  const remainder = total % memberCount;
-  return members.map((member, index) => ({
-    member,
-    amount: (baseAmount + (BigInt(index) < remainder ? 1n : 0n)).toString(),
-  }));
-};
-
-const parseAllocationAmount = (amount: string) => {
-  return /^(0|[1-9][0-9]*)$/.test(amount) ? BigInt(amount) : null;
-};
 
 const formatYen = (amount: bigint) => {
   return `¥${amount.toLocaleString("ja-JP")}`;
