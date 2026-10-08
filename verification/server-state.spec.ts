@@ -497,3 +497,35 @@ test("Mutation の401もログインへ戻す", async ({ page }) => {
   ).toBeVisible();
   expect(state.calls.get("PATCH /api/groups/group-1/claims/claim-1")).toBe(1);
 });
+
+test("出金フォームは閉じると入力を初期化し、API失敗時には入力を保持する", async ({
+  page,
+}) => {
+  const state = await mockApi(page);
+  await page.goto("/home");
+  const open = page.getByRole("button", { name: "立て替えたお金を記録する" });
+  await open.click();
+  await page.getByLabel("金額", { exact: true }).fill("2500");
+  await page.getByRole("combobox").selectOption("wallet-1");
+  await page.getByPlaceholder("何に使いましたか？").fill("  夕食  ");
+  state.mutationStatus = 503;
+  await page
+    .getByRole("button", { name: "出金を記録する", exact: true })
+    .click();
+  await expect(page.getByText("更新エラー", { exact: true })).toBeVisible();
+  await expect(page.getByLabel("金額", { exact: true })).toHaveValue("2,500");
+  await expect(page.getByPlaceholder("何に使いましたか？")).toHaveValue(
+    "  夕食  ",
+  );
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("dialog")).not.toBeVisible();
+  await open.click();
+  await expect(page.getByLabel("金額", { exact: true })).toBeFocused();
+  await expect(page.getByLabel("金額", { exact: true })).toHaveValue("");
+  await expect(page.getByRole("combobox")).toHaveValue("");
+  await expect(page.getByPlaceholder("何に使いましたか？")).toHaveValue("");
+  await expect(page.getByText("更新エラー", { exact: true })).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "出金を記録する", exact: true }),
+  ).toBeDisabled();
+});
