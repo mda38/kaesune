@@ -1,50 +1,24 @@
-import { useCallback, useEffect, useState } from "react";
-import { ApiRequestError } from "../../lib/api-client";
-import {
-  getGroupWithdrawals,
-  type Withdrawal,
-} from "../../features/withdrawal/api";
+import { walletQueries } from "../../features/wallet/queries";
+import { useQuery } from "@tanstack/react-query";
+import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { withdrawalQueries } from "../../features/withdrawal/queries";
 import { WithdrawalList } from "../../features/withdrawal/components/WithdrawalList";
 import { BottomNav } from "../../layouts";
 import { Card } from "../../components/ui";
-import { useWalletStore } from "../../features/wallet/use-wallet-store";
 import { useGroupContext } from "../../features/group/useGroupContext";
 
 export function RecordsPage() {
-  const { currentGroup, errorMessage, isLoading, refresh, unauthenticate } =
-    useGroupContext();
-  const [withdrawals, setWithdrawals] = useState<Withdrawal[]>([]);
-  const [recordsError, setRecordsError] = useState<string | null>(null);
-  const [areRecordsLoading, setAreRecordsLoading] = useState(false);
-  const wallets = useWalletStore((state) => state.wallets);
+  const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
+  const query = useQuery(withdrawalQueries.list(currentGroup?.id));
+  const withdrawals = query.data ?? [];
+  const areRecordsLoading = Boolean(currentGroup) && query.isPending;
+  const recordsError = query.error?.message ?? null;
+  const refreshRecords = async () => {
+    await query.refetch();
+  };
 
-  const refreshRecords = useCallback(async () => {
-    if (!currentGroup) return;
-
-    setAreRecordsLoading(true);
-    setRecordsError(null);
-    try {
-      const nextWithdrawals = await getGroupWithdrawals(currentGroup.id);
-      setWithdrawals(nextWithdrawals);
-    } catch (error) {
-      setWithdrawals([]);
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setRecordsError(
-        error instanceof Error
-          ? error.message
-          : "出金記録の取得に失敗しました。",
-      );
-    } finally {
-      setAreRecordsLoading(false);
-    }
-  }, [currentGroup, unauthenticate]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refreshRecords);
-  }, [refreshRecords]);
+  const walletsQuery = useQuery(walletQueries.list(currentGroup?.id));
+  const wallets = walletsQuery.data ?? [];
 
   const walletNameById = new Map(
     wallets.map((wallet) => [wallet.id, wallet.name]),
@@ -58,6 +32,18 @@ export function RecordsPage() {
         </h1>
         <p className="text-xs font-bold text-black">出金記録を管理</p>
       </header>
+      <QueryErrorNotice
+        message={currentGroup ? errorMessage : null}
+        onRetry={refresh}
+      />
+      <QueryErrorNotice
+        message={query.data !== undefined ? recordsError : null}
+        onRetry={refreshRecords}
+      />
+      <QueryErrorNotice
+        message={walletsQuery.error?.message}
+        onRetry={() => walletsQuery.refetch()}
+      />
       {isLoading ? (
         <Card className="p-4">
           <p className="text-sm" aria-busy="true">
@@ -85,7 +71,7 @@ export function RecordsPage() {
             出金記録を取得中です…
           </p>
         </Card>
-      ) : recordsError ? (
+      ) : recordsError && query.data === undefined ? (
         <Card className="p-4">
           <p className="text-sm" role="alert">
             {recordsError}

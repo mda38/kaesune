@@ -3,9 +3,13 @@ import type { CreateWithdrawalInput, Withdrawal } from "./types";
 
 export type { CreateWithdrawalInput, Withdrawal } from "./types";
 
-export async function getGroupWithdrawals(groupId: string) {
+export async function getGroupWithdrawals(
+  groupId: string,
+  signal?: AbortSignal,
+) {
   const response = await get<{ withdrawals: Withdrawal[] }>(
     `/api/groups/${groupId}/withdrawals`,
+    signal,
   );
   return response.withdrawals;
 }

@@ -1,17 +1,20 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { Navigate } from "react-router-dom";
+import { Navigate, useNavigate, useSearchParams } from "react-router-dom";
 import { authClient } from "../../features/auth/auth-client";
 import { Card, Icon } from "../../components/ui";
 
 export function LoginPage() {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const isSessionExpired = searchParams.get("reason") === "session-expired";
   const { data: session, isPending } = authClient.useSession();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  if (session) {
+  if (session && !isSessionExpired) {
     return <Navigate to="/home" replace />;
   }
 
@@ -31,6 +34,7 @@ export function LoginPage() {
     }
 
     setIsSubmitting(false);
+    if (!signInError) navigate("/home", { replace: true });
   };
 
   return (
@@ -44,6 +48,11 @@ export function LoginPage() {
         <p className="mb-8 text-sm leading-7 text-neutral-600">
           家族やパートナーとの支払いを記録し、負担額の調整から請求までをひとつにまとめます。
         </p>
+        {isSessionExpired && (
+          <p className="mb-4 text-sm" role="status">
+            セッションの有効期限が切れました。再度ログインしてください。
+          </p>
+        )}
         <form onSubmit={signIn} className="space-y-4">
           <label className="block text-sm font-bold">
             ログイン ID（メールアドレス）

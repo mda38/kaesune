@@ -17,7 +17,7 @@ flowchart TD
 - **API**: 認証・認可、入力検証、業務ルール、トランザクション整合性を保証します。
 - **Database**: グループ、財布、出金、負担、請求、履歴を永続化します。
 
-[データベース設計を見る](database.md) / [認証設計を見る](authentication.md) / [API 設計を見る](api.md) / [技術スタックを見る](technology-stack.md)
+[データベース設計を見る](database.md) / [認証設計を見る](authentication.md) / [API 設計を見る](api.md) / [技術スタックを見る](technology-stack.md) / [Server State の管理を見る](server-state.md)
 
 ## 技術スタック
 

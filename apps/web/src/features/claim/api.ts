@@ -3,9 +3,10 @@ import type { Claim, ClaimListItem } from "./types";
 
 export type { Claim, ClaimListItem } from "./types";
 
-export async function getGroupClaims(groupId: string) {
+export async function getGroupClaims(groupId: string, signal?: AbortSignal) {
   const response = await get<{ claims: ClaimListItem[] }>(
     `/api/groups/${groupId}/claims`,
+    signal,
   );
   return response.claims;
 }

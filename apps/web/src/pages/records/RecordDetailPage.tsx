@@ -1,83 +1,46 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { walletQueries } from "../../features/wallet/queries";
+import { useDeleteWithdrawal } from "../../features/withdrawal/mutations";
+import { useQuery } from "@tanstack/react-query";
+import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { withdrawalQueries } from "../../features/withdrawal/queries";
 import Delete01Icon from "@hugeicons/core-free-icons/Delete01Icon";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  deleteGroupWithdrawal,
-  getGroupWithdrawals,
-  type Withdrawal,
-} from "../../features/withdrawal/api";
-import { ApiRequestError } from "../../lib/api-client";
 import { BottomNav } from "../../layouts";
 import { Card } from "../../components/ui";
-import { useWalletStore } from "../../features/wallet/use-wallet-store";
 import { useGroupContext } from "../../features/group/useGroupContext";
 
 export function RecordDetailPage() {
   const { withdrawalId } = useParams();
   const navigate = useNavigate();
-  const { currentGroup, errorMessage, isLoading, refresh, unauthenticate } =
-    useGroupContext();
-  const [withdrawal, setWithdrawal] = useState<Withdrawal | null>(null);
-  const [dataError, setDataError] = useState<string | null>(null);
-  const [isDataLoading, setIsDataLoading] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
+  const query = useQuery({
+    ...withdrawalQueries.list(currentGroup?.id),
+    select: (items) => items.find((item) => item.id === withdrawalId) ?? null,
+  });
+  const withdrawal = query.data;
+  const isDataLoading = Boolean(currentGroup) && query.isPending;
+  const dataError = query.error?.message ?? null;
+  const refreshRecord = async () => {
+    await query.refetch();
+  };
+  const walletsQuery = useQuery(walletQueries.list(currentGroup?.id));
+  const wallets = walletsQuery.data ?? [];
+  const deleteMutation = useDeleteWithdrawal();
+  const deleteError = deleteMutation.error?.message ?? null;
+  const isDeleting = deleteMutation.isPending;
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const wallets = useWalletStore((state) => state.wallets);
 
-  const refreshRecord = useCallback(async () => {
-    if (!currentGroup || !withdrawalId) return;
-
-    setIsDataLoading(true);
-    setDataError(null);
-    try {
-      const withdrawals = await getGroupWithdrawals(currentGroup.id);
-      setWithdrawal(
-        withdrawals.find((item) => item.id === withdrawalId) ?? null,
-      );
-    } catch (error) {
-      setWithdrawal(null);
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setDataError(
-        error instanceof Error
-          ? error.message
-          : "出金記録の取得に失敗しました。",
-      );
-    } finally {
-      setIsDataLoading(false);
-    }
-  }, [currentGroup, unauthenticate, withdrawalId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refreshRecord);
-  }, [refreshRecord]);
-
-  const deleteWithdrawal = async () => {
-    if (!currentGroup || !withdrawal) return;
+  const deleteWithdrawal = () => {
+    if (!currentGroup || !withdrawal || isDeleting) return;
     if (!window.confirm(`「${withdrawal.purpose}」を削除しますか？`)) return;
-
-    setIsDeleting(true);
-    setDeleteError(null);
-    try {
-      await deleteGroupWithdrawal(currentGroup.id, withdrawal.id);
-      navigate("/records", { replace: true });
-    } catch (error) {
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setDeleteError(
-        error instanceof Error
-          ? error.message
-          : "出金記録を削除できませんでした。",
-      );
-    } finally {
-      setIsDeleting(false);
-    }
+    deleteMutation.mutate(
+      { groupId: currentGroup.id, withdrawalId: withdrawal.id },
+      {
+        onSuccess: () => navigate("/records", { replace: true }),
+      },
+    );
   };
 
   const walletName = withdrawal
@@ -126,6 +89,18 @@ export function RecordDetailPage() {
           )}
         </div>
       </div>
+      <QueryErrorNotice
+        message={currentGroup ? errorMessage : null}
+        onRetry={refresh}
+      />
+      <QueryErrorNotice
+        message={query.data !== undefined ? dataError : null}
+        onRetry={refreshRecord}
+      />
+      <QueryErrorNotice
+        message={walletsQuery.error?.message}
+        onRetry={() => walletsQuery.refetch()}
+      />
       {isLoading ? (
         <Card className="p-4">
           <p className="text-sm" aria-busy="true">
@@ -153,7 +128,7 @@ export function RecordDetailPage() {
             出金記録を取得中です…
           </p>
         </Card>
-      ) : dataError ? (
+      ) : dataError && query.data === undefined ? (
         <Card className="p-4">
           <p className="text-sm" role="alert">
             {dataError}
