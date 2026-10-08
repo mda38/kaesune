@@ -1,10 +1,4 @@
-import {
-  forwardRef,
-  useImperativeHandle,
-  useRef,
-  useState,
-  type FormEvent,
-} from "react";
+import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { walletQueries } from "@/features/wallet/queries";
@@ -12,6 +6,8 @@ import { useCreateWithdrawal } from "@/features/withdrawal/mutations";
 import { QueryErrorNotice } from "@/components/ui/query-error-notice";
 import { useGroupContext } from "@/features/group/use-group-context";
 import { Screen } from "@/layouts/screen";
+import { WithdrawalForm } from "@/features/withdrawal/components/withdrawal-form";
+import type { CreateWithdrawalInput } from "@/features/withdrawal/types";
 import { Card } from "@/components/ui/card";
 
 export type PaymentDialogHandle = {
@@ -33,26 +29,9 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
     const isSubmitting = createMutation.isPending;
     const dialogRef = useRef<HTMLDialogElement>(null);
     const amountInputRef = useRef<HTMLInputElement>(null);
-    const [purpose, setPurpose] = useState("");
-    const [amount, setAmount] = useState("");
-    const [walletId, setWalletId] = useState("");
-    const [withdrawnOn, setWithdrawnOn] = useState(today());
-    const [note, setNote] = useState("");
-    const [validationError, setValidationError] = useState<string | null>(null);
-    const submitError =
-      validationError ?? createMutation.error?.message ?? null;
-    const isFormReady =
-      /^[1-9][0-9]*$/.test(amount) &&
-      Boolean(walletId) &&
-      Boolean(purpose.trim());
-
+    const [formKey, setFormKey] = useState(0);
     const resetForm = () => {
-      setPurpose("");
-      setAmount("");
-      setWalletId("");
-      setWithdrawnOn(today());
-      setNote("");
-      setValidationError(null);
+      setFormKey((key) => key + 1);
       createMutation.reset();
     };
 
@@ -67,41 +46,10 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
       },
     }));
 
-    const handleAmountChange = (value: string) => {
-      const digits = value.replaceAll(/\D/g, "").replace(/^0+/, "");
-      setAmount(digits);
-    };
-
-    const saveWithdrawal = (event: FormEvent<HTMLFormElement>) => {
-      event.preventDefault();
+    const saveWithdrawal = (input: CreateWithdrawalInput) => {
       if (!currentGroup || isSubmitting) return;
-
-      const trimmedPurpose = purpose.trim();
-      const trimmedNote = note.trim();
-      if (!trimmedPurpose) {
-        setValidationError("用途を入力してください。");
-        return;
-      }
-      if (!/^[1-9][0-9]*$/.test(amount)) {
-        setValidationError("金額は正の円整数で入力してください。");
-        return;
-      }
-      if (!walletId) {
-        setValidationError("出金元の財布を選択してください。");
-        return;
-      }
-      setValidationError(null);
       createMutation.mutate(
-        {
-          groupId: currentGroup.id,
-          input: {
-            purpose: trimmedPurpose,
-            amount,
-            walletId,
-            withdrawnOn: withdrawnOn || today(),
-            ...(trimmedNote ? { note: trimmedNote } : {}),
-          },
-        },
+        { groupId: currentGroup.id, input },
         { onSuccess: () => navigate("/records") },
       );
     };
@@ -130,28 +78,16 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
               ×
             </button>
           </header>
-          <form
-            onSubmit={saveWithdrawal}
-            className="flex min-h-[calc(100svh-180px)] flex-col"
+          <WithdrawalForm
+            key={formKey}
+            amountInputRef={amountInputRef}
+            wallets={wallets}
+            isReady={Boolean(currentGroup) && !isLoading && wallets.length > 0}
+            isSubmitting={isSubmitting}
+            mutationError={createMutation.error?.message ?? null}
+            onSave={saveWithdrawal}
+            onClose={closeDialog}
           >
-            <label className="border-b border-black pb-2">
-              <span className="sr-only">金額</span>
-              <div className="flex items-center gap-3">
-                <span className="text-[42px] leading-none font-extrabold">
-                  ¥
-                </span>
-                <input
-                  ref={amountInputRef}
-                  value={formatAmount(amount)}
-                  onChange={(event) => handleAmountChange(event.target.value)}
-                  className="min-w-0 flex-1 bg-transparent text-right text-[42px] leading-none font-extrabold outline-none placeholder:text-neutral-300"
-                  inputMode="numeric"
-                  placeholder="0"
-                  aria-label="金額"
-                  disabled={isSubmitting}
-                />
-              </div>
-            </label>
             <QueryErrorNotice
               message={currentGroup ? errorMessage : null}
               onRetry={refresh}
@@ -218,94 +154,10 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
                   財布管理へ
                 </button>
               </Card>
-            ) : (
-              <>
-                <Card className="mt-6">
-                  <label className="block border-b border-black">
-                    <span className="sr-only">出金元の財布</span>
-                    <select
-                      value={walletId}
-                      onChange={(event) => setWalletId(event.target.value)}
-                      className={`h-14 w-full bg-white px-4 text-base font-bold outline-none ${
-                        walletId ? "text-black" : "text-neutral-400"
-                      }`}
-                      disabled={isSubmitting}
-                    >
-                      <option value="">どの財布から出金しましたか？</option>
-                      {wallets.map((wallet) => (
-                        <option key={wallet.id} value={wallet.id}>
-                          {wallet.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                  <label className="block">
-                    <span className="sr-only">用途</span>
-                    <input
-                      value={purpose}
-                      onChange={(event) => setPurpose(event.target.value)}
-                      className="h-14 w-full px-4 text-base font-bold outline-none placeholder:text-neutral-400"
-                      maxLength={200}
-                      placeholder="何に使いましたか？"
-                      disabled={isSubmitting}
-                    />
-                  </label>
-                </Card>
-                <label className="mt-3 ml-auto flex w-fit items-center gap-2 border border-black px-2 py-1 text-sm font-bold">
-                  <span>日付（任意）</span>
-                  <input
-                    type="date"
-                    value={withdrawnOn}
-                    onChange={(event) => setWithdrawnOn(event.target.value)}
-                    className="w-28 bg-transparent text-right outline-none"
-                    disabled={isSubmitting}
-                  />
-                </label>
-                <label className="mt-6 block text-sm font-bold">
-                  <span className="mb-2 block">メモ（任意）</span>
-                  <textarea
-                    value={note}
-                    onChange={(event) => setNote(event.target.value)}
-                    className="h-24 w-full border border-black p-4 text-base outline-none"
-                    maxLength={1000}
-                    placeholder="例：駅前パーキング"
-                    disabled={isSubmitting}
-                  />
-                </label>
-                {submitError && (
-                  <p className="mt-4 text-sm" role="alert">
-                    {submitError}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={isSubmitting || !isFormReady}
-                  className="mt-auto grid h-12 w-full place-items-center bg-black text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-neutral-500"
-                >
-                  {isSubmitting ? "保存中…" : "出金を記録する"}
-                </button>
-                <button
-                  type="button"
-                  onClick={closeDialog}
-                  className="mt-3 grid h-12 w-full place-items-center border border-black text-sm font-bold"
-                >
-                  キャンセル
-                </button>
-              </>
-            )}
-          </form>
+            ) : null}
+          </WithdrawalForm>
         </Screen>
       </dialog>
     );
   },
 );
-
-const formatAmount = (amount: string) => {
-  return amount.replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-};
-
-const today = () => {
-  const date = new Date();
-  const offset = date.getTimezoneOffset() * 60_000;
-  return new Date(date.getTime() - offset).toISOString().slice(0, 10);
-};
