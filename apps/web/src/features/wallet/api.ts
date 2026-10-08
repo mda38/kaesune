@@ -3,9 +3,10 @@ import type { CreateWalletInput, Wallet } from "./types";
 
 export type { CreateWalletInput, Wallet } from "./types";
 
-export async function getGroupWallets(groupId: string) {
+export async function getGroupWallets(groupId: string, signal?: AbortSignal) {
   const response = await get<{ wallets: Wallet[] }>(
     `/api/groups/${groupId}/wallets`,
+    signal,
   );
   return response.wallets;
 }

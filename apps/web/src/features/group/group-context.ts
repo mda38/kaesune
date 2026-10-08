@@ -7,7 +7,6 @@ export type GroupContextValue = {
   errorMessage: string | null;
   isLoading: boolean;
   refresh: () => Promise<void>;
-  unauthenticate: () => void;
 };
 
 export const GroupContext = createContext<GroupContextValue | null>(null);

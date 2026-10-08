@@ -1,18 +1,15 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { withdrawalQueries } from "../../features/withdrawal/queries";
+import { walletQueries } from "../../features/wallet/queries";
+import { groupQueries } from "../../features/group/queries";
+import { useCreateWithdrawalClaims } from "../../features/allocation/mutations";
+import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import {
-  createGroupWithdrawalClaims,
-  replaceGroupWithdrawalAllocations,
-} from "../../features/allocation/api";
-import { ApiRequestError } from "../../lib/api-client";
-import { getGroupMembers, type GroupMember } from "../../features/group/api";
-import {
-  getGroupWithdrawals,
-  type Withdrawal,
-} from "../../features/withdrawal/api";
+import type { GroupMember } from "../../features/group/types";
+import type { Withdrawal } from "../../features/withdrawal/types";
 import { Screen } from "../../layouts";
 import { Avatar, Badge, Card, Icon } from "../../components/ui";
-import { useWalletStore } from "../../features/wallet/use-wallet-store";
 import { useGroupContext } from "../../features/group/useGroupContext";
 
 type AllocationView = { member: GroupMember; amount: string };
@@ -25,56 +22,42 @@ type AllocationOverride = {
 export function AllocationPage() {
   const { withdrawalId } = useParams();
   const navigate = useNavigate();
-  const { currentGroup, errorMessage, isLoading, refresh, unauthenticate } =
-    useGroupContext();
-  const [withdrawal, setWithdrawal] = useState<Withdrawal | null>(null);
-  const [members, setMembers] = useState<GroupMember[]>([]);
-  const [dataError, setDataError] = useState<string | null>(null);
-  const [isDataLoading, setIsDataLoading] = useState(false);
-  const [claimCreateError, setClaimCreateError] = useState<string | null>(null);
-  const [isCreatingClaims, setIsCreatingClaims] = useState(false);
+  const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
+  const withdrawalQuery = useQuery({
+    ...withdrawalQueries.list(currentGroup?.id),
+    select: (items) => items.find((item) => item.id === withdrawalId) ?? null,
+  });
+  const membersQuery = useQuery(groupQueries.members(currentGroup?.id));
+  const walletsQuery = useQuery(walletQueries.list(currentGroup?.id));
+  const withdrawal = withdrawalQuery.data;
+  const members = membersQuery.data ?? [];
+  const wallets = walletsQuery.data ?? [];
+  const isDataLoading =
+    Boolean(currentGroup) &&
+    (withdrawalQuery.isPending ||
+      membersQuery.isPending ||
+      walletsQuery.isPending);
+  const loadError =
+    withdrawalQuery.error?.message ??
+    membersQuery.error?.message ??
+    walletsQuery.error?.message ??
+    null;
+  const hasData =
+    withdrawalQuery.data !== undefined &&
+    membersQuery.data !== undefined &&
+    walletsQuery.data !== undefined;
+  const refreshPageData = async () => {
+    await Promise.all([
+      withdrawalQuery.refetch(),
+      membersQuery.refetch(),
+      walletsQuery.refetch(),
+    ]);
+  };
+  const createMutation = useCreateWithdrawalClaims();
+  const isCreatingClaims = createMutation.isPending;
+  const claimCreateError = createMutation.error?.message ?? null;
   const [allocationOverride, setAllocationOverride] =
     useState<AllocationOverride | null>(null);
-  const wallets = useWalletStore((state) => state.wallets);
-  const walletStatus = useWalletStore((state) => state.walletStatus);
-  const walletErrorMessage = useWalletStore(
-    (state) => state.walletErrorMessage,
-  );
-  const retryWalletLoad = useWalletStore((state) => state.retryWalletLoad);
-
-  const refreshPageData = useCallback(async () => {
-    if (!currentGroup || !withdrawalId) return;
-    setIsDataLoading(true);
-    setDataError(null);
-    try {
-      const [nextWithdrawals, nextMembers] = await Promise.all([
-        getGroupWithdrawals(currentGroup.id),
-        getGroupMembers(currentGroup.id),
-      ]);
-      setWithdrawal(
-        nextWithdrawals.find((item) => item.id === withdrawalId) ?? null,
-      );
-      setMembers(nextMembers);
-    } catch (error) {
-      setWithdrawal(null);
-      setMembers([]);
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setDataError(
-        error instanceof Error
-          ? error.message
-          : "請求発行に必要な情報を取得できませんでした。",
-      );
-    } finally {
-      setIsDataLoading(false);
-    }
-  }, [currentGroup, unauthenticate, withdrawalId]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refreshPageData);
-  }, [refreshPageData]);
 
   const wallet = withdrawal
     ? (wallets.find((item) => item.id === withdrawal.walletId) ?? null)
@@ -110,38 +93,20 @@ export function AllocationPage() {
     hasValidAllocationAmounts &&
     remainingAmount === 0n &&
     claimTargets.length > 0;
-  const isWalletLoading =
-    Boolean(currentGroup) &&
-    (walletStatus === "idle" || walletStatus === "loading");
-  const loadError = dataError ?? walletErrorMessage;
-
-  const createClaims = async () => {
+  const createClaims = () => {
     if (!currentGroup || !withdrawalId || isCreatingClaims || !canCreateClaims)
       return;
-    setIsCreatingClaims(true);
-    setClaimCreateError(null);
-    try {
-      await replaceGroupWithdrawalAllocations(
-        currentGroup.id,
+    createMutation.mutate(
+      {
+        groupId: currentGroup.id,
         withdrawalId,
-        allocations.map(({ member, amount }) => ({
+        allocations: allocations.map(({ member, amount }) => ({
           memberId: member.id,
           amount,
         })),
-      );
-      await createGroupWithdrawalClaims(currentGroup.id, withdrawalId);
-      navigate("/invoices");
-    } catch (error) {
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setClaimCreateError(
-        error instanceof Error ? error.message : "請求を作成できませんでした。",
-      );
-    } finally {
-      setIsCreatingClaims(false);
-    }
+      },
+      { onSuccess: () => navigate("/invoices") },
+    );
   };
 
   const applyEqualPreset = () => {
@@ -192,6 +157,14 @@ export function AllocationPage() {
           負担を割り当てる
         </h1>
       </header>
+      <QueryErrorNotice
+        message={currentGroup ? errorMessage : null}
+        onRetry={refresh}
+      />
+      <QueryErrorNotice
+        message={hasData ? loadError : null}
+        onRetry={refreshPageData}
+      />
       {isLoading ? (
         <StatusCard message="グループ情報を取得中です…" loading />
       ) : !currentGroup ? (
@@ -199,15 +172,12 @@ export function AllocationPage() {
           message={errorMessage ?? "現在、所属しているグループはありません。"}
           onRetry={errorMessage ? () => void refresh() : undefined}
         />
-      ) : isDataLoading || isWalletLoading ? (
+      ) : isDataLoading ? (
         <StatusCard message="請求発行に必要な情報を取得中です…" loading />
-      ) : loadError ? (
+      ) : loadError && !hasData ? (
         <StatusCard
           message={loadError}
-          onRetry={() => {
-            if (walletStatus === "error") retryWalletLoad();
-            void refreshPageData();
-          }}
+          onRetry={() => void refreshPageData()}
         />
       ) : !withdrawal ? (
         <StatusCard message="指定された出金記録は見つかりませんでした。" />

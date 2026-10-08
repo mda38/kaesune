@@ -33,8 +33,8 @@ async function request<T>(
   return response.json() as Promise<T>;
 }
 
-export function get<T>(path: string) {
-  return request<T>(path, {}, "データの取得に失敗しました。");
+export function get<T>(path: string, signal?: AbortSignal) {
+  return request<T>(path, { signal }, "データの取得に失敗しました。");
 }
 
 export function post<T>(path: string, body: unknown) {

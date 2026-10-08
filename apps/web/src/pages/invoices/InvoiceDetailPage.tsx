@@ -1,12 +1,11 @@
-import { useCallback, useEffect, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
 import {
-  deleteGroupClaim,
-  getGroupClaims,
-  type ClaimListItem,
-  updateGroupClaimStatus,
-} from "../../features/claim/api";
-import { ApiRequestError } from "../../lib/api-client";
+  useDeleteClaim,
+  useUpdateClaimStatus,
+} from "../../features/claim/mutations";
+import { useQuery } from "@tanstack/react-query";
+import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { claimQueries } from "../../features/claim/queries";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { BottomNav } from "../../layouts";
 import { Badge, Card, Icon } from "../../components/ui";
 import { useGroupContext } from "../../features/group/useGroupContext";
@@ -14,89 +13,49 @@ import { useGroupContext } from "../../features/group/useGroupContext";
 export function InvoiceDetailPage() {
   const { claimId } = useParams();
   const navigate = useNavigate();
-  const { currentGroup, errorMessage, isLoading, refresh, unauthenticate } =
-    useGroupContext();
-  const [claim, setClaim] = useState<ClaimListItem | null>(null);
-  const [claimsError, setClaimsError] = useState<string | null>(null);
-  const [areClaimsLoading, setAreClaimsLoading] = useState(false);
-  const [actionError, setActionError] = useState<string | null>(null);
-  const [isUpdatingStatus, setIsUpdatingStatus] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
+  const query = useQuery({
+    ...claimQueries.list(currentGroup?.id),
+    select: (items) => items.find((item) => item.id === claimId) ?? null,
+  });
+  const claim = query.data;
+  const areClaimsLoading = Boolean(currentGroup) && query.isPending;
+  const claimsError = query.error?.message ?? null;
+  const refreshClaim = async () => {
+    await query.refetch();
+  };
+  const updateMutation = useUpdateClaimStatus();
+  const deleteMutation = useDeleteClaim();
+  const isUpdatingStatus = updateMutation.isPending;
+  const isDeleting = deleteMutation.isPending;
+  const actionError =
+    updateMutation.error?.message ?? deleteMutation.error?.message ?? null;
 
-  const refreshClaim = useCallback(async () => {
-    if (!currentGroup || !claimId) return;
-
-    setAreClaimsLoading(true);
-    setClaimsError(null);
-    try {
-      const claims = await getGroupClaims(currentGroup.id);
-      setClaim(claims.find((item) => item.id === claimId) ?? null);
-    } catch (error) {
-      setClaim(null);
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setClaimsError(
-        error instanceof Error ? error.message : "請求の取得に失敗しました。",
-      );
-    } finally {
-      setAreClaimsLoading(false);
-    }
-  }, [claimId, currentGroup, unauthenticate]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refreshClaim);
-  }, [refreshClaim]);
-
-  const updateStatus = async (status: "unsettled" | "settled") => {
-    if (!currentGroup || !claim) return;
-
-    setIsUpdatingStatus(true);
-    setActionError(null);
-    try {
-      await updateGroupClaimStatus(currentGroup.id, claim.id, status);
-      await refreshClaim();
-    } catch (error) {
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setActionError(
-        error instanceof Error
-          ? error.message
-          : "請求状態を更新できませんでした。",
-      );
-    } finally {
-      setIsUpdatingStatus(false);
-    }
+  const updateStatus = (status: "unsettled" | "settled") => {
+    if (!currentGroup || !claim || isUpdatingStatus || isDeleting) return;
+    deleteMutation.reset();
+    updateMutation.mutate({
+      groupId: currentGroup.id,
+      claimId: claim.id,
+      status,
+    });
   };
 
-  const deleteClaim = async () => {
-    if (!currentGroup || !claim) return;
+  const deleteClaim = () => {
+    if (!currentGroup || !claim || isUpdatingStatus || isDeleting) return;
     if (
       !window.confirm(
         `「${claim.debtorMemberName}さんへの請求」を削除しますか？`,
       )
     )
       return;
-
-    setIsDeleting(true);
-    setActionError(null);
-    try {
-      await deleteGroupClaim(currentGroup.id, claim.id);
-      navigate("/invoices", { replace: true });
-    } catch (error) {
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setActionError(
-        error instanceof Error ? error.message : "請求を削除できませんでした。",
-      );
-    } finally {
-      setIsDeleting(false);
-    }
+    updateMutation.reset();
+    deleteMutation.mutate(
+      { groupId: currentGroup.id, claimId: claim.id },
+      {
+        onSuccess: () => navigate("/invoices", { replace: true }),
+      },
+    );
   };
 
   const isSettled = claim?.status === "settled";
@@ -110,6 +69,14 @@ export function InvoiceDetailPage() {
         <Icon name="back" size={18} />
         請求一覧へ戻る
       </Link>
+      <QueryErrorNotice
+        message={currentGroup ? errorMessage : null}
+        onRetry={refresh}
+      />
+      <QueryErrorNotice
+        message={query.data !== undefined ? claimsError : null}
+        onRetry={refreshClaim}
+      />
       {isLoading ? (
         <Message>グループ情報を取得中です…</Message>
       ) : !currentGroup ? (
@@ -121,7 +88,7 @@ export function InvoiceDetailPage() {
         </Message>
       ) : areClaimsLoading ? (
         <Message>請求を取得中です…</Message>
-      ) : claimsError ? (
+      ) : claimsError && query.data === undefined ? (
         <Message error={claimsError} onRetry={refreshClaim}>
           {claimsError}
         </Message>

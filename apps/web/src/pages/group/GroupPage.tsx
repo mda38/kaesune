@@ -1,49 +1,33 @@
-import { useCallback, useEffect, useState } from "react";
-import { ApiRequestError } from "../../lib/api-client";
-import { getGroupMembers, type GroupMember } from "../../features/group/api";
+import { useQuery } from "@tanstack/react-query";
+import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { groupQueries } from "../../features/group/queries";
 import { Heading, Screen } from "../../layouts";
 import { Avatar, Badge, Card } from "../../components/ui";
 import { useGroupContext } from "../../features/group/useGroupContext";
 
 export function GroupPage() {
-  const { currentGroup, errorMessage, isLoading, refresh, unauthenticate } =
-    useGroupContext();
-  const [members, setMembers] = useState<GroupMember[]>([]);
-  const [membersError, setMembersError] = useState<string | null>(null);
-  const [areMembersLoading, setAreMembersLoading] = useState(false);
-
-  const refreshMembers = useCallback(async () => {
-    if (!currentGroup) return;
-
-    setAreMembersLoading(true);
-    setMembersError(null);
-    try {
-      setMembers(await getGroupMembers(currentGroup.id));
-    } catch (error) {
-      setMembers([]);
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setMembersError(
-        error instanceof Error
-          ? error.message
-          : "メンバーの取得に失敗しました。",
-      );
-    } finally {
-      setAreMembersLoading(false);
-    }
-  }, [currentGroup, unauthenticate]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refreshMembers);
-  }, [refreshMembers]);
+  const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
+  const query = useQuery(groupQueries.members(currentGroup?.id));
+  const members = query.data ?? [];
+  const areMembersLoading = Boolean(currentGroup) && query.isPending;
+  const membersError = query.error?.message ?? null;
+  const refreshMembers = async () => {
+    await query.refetch();
+  };
 
   return (
     <Screen active="mypage">
       <Heading eyebrow={currentGroup?.name ?? "グループ"} title="グループ" />
       <section>
         <h2 className="mb-3 text-[15px] font-bold">メンバー</h2>
+        <QueryErrorNotice
+          message={currentGroup ? errorMessage : null}
+          onRetry={refresh}
+        />
+        <QueryErrorNotice
+          message={query.data !== undefined ? membersError : null}
+          onRetry={refreshMembers}
+        />
         {isLoading ? (
           <Card className="p-4">
             <p className="text-sm" aria-busy="true">
@@ -71,7 +55,7 @@ export function GroupPage() {
               メンバー情報を取得中です…
             </p>
           </Card>
-        ) : membersError ? (
+        ) : membersError && query.data === undefined ? (
           <Card className="p-4">
             <p className="text-sm" role="alert">
               {membersError}

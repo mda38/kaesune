@@ -18,6 +18,7 @@
 - [Database design](architecture/database.md)
 - [System overview](architecture/overview.md)
 - [Technology stack](architecture/technology-stack.md)
+- [Server State の管理](architecture/server-state.md)
 
 ## 開発・運用
 

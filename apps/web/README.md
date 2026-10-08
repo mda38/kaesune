@@ -28,3 +28,9 @@ Cloudflare への公開前に、Backend の `DATABASE_URL`、`BETTER_AUTH_URL`�
 `apps/backend/README.md` を参照してください。
 
 ログイン画面では Backend に seed 済みのメールアドレスとパスワードを入力します。Safari の保存確認を承認すると、次回からログイン情報を自動入力できます。
+
+## Server State
+
+API の取得結果は TanStack Query v5 で管理します。API 関数、Query 定義、Mutation hook、Page の責務とキャッシュ方針は [Server State の管理](../../docs/architecture/server-state.md) を参照してください。
+
+リポジトリのルートで `pnpm verify:server-state` を実行すると、DB 接続を使わず固定レスポンスでブラウザ検証できます。

@@ -6,10 +6,11 @@ import {
   type FormEvent,
 } from "react";
 import { useNavigate } from "react-router-dom";
-import { ApiRequestError } from "../../../lib/api-client";
-import { useWalletStore } from "../../wallet/use-wallet-store";
+import { useQuery } from "@tanstack/react-query";
+import { walletQueries } from "../../wallet/queries";
+import { useCreateWithdrawal } from "../mutations";
+import { QueryErrorNotice } from "../../../components/ui/QueryErrorNotice";
 import { useGroupContext } from "../../group/useGroupContext";
-import { createGroupWithdrawal } from "../api";
 import { Screen } from "../../../layouts";
 import { Card } from "../../../components/ui";
 
@@ -20,14 +21,16 @@ export type PaymentDialogHandle = {
 export const PaymentDialog = forwardRef<PaymentDialogHandle>(
   function PaymentDialog(_, ref) {
     const navigate = useNavigate();
-    const { currentGroup, errorMessage, isLoading, refresh, unauthenticate } =
+    const { currentGroup, errorMessage, isLoading, refresh } =
       useGroupContext();
-    const wallets = useWalletStore((state) => state.wallets);
-    const walletStatus = useWalletStore((state) => state.walletStatus);
-    const walletErrorMessage = useWalletStore(
-      (state) => state.walletErrorMessage,
-    );
-    const retryWalletLoad = useWalletStore((state) => state.retryWalletLoad);
+    const walletsQuery = useQuery(walletQueries.list(currentGroup?.id));
+    const wallets = walletsQuery.data ?? [];
+    const walletErrorMessage = walletsQuery.error?.message;
+    const retryWalletLoad = () => {
+      void walletsQuery.refetch();
+    };
+    const createMutation = useCreateWithdrawal();
+    const isSubmitting = createMutation.isPending;
     const dialogRef = useRef<HTMLDialogElement>(null);
     const amountInputRef = useRef<HTMLInputElement>(null);
     const [purpose, setPurpose] = useState("");
@@ -35,8 +38,9 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
     const [walletId, setWalletId] = useState("");
     const [withdrawnOn, setWithdrawnOn] = useState(today());
     const [note, setNote] = useState("");
-    const [submitError, setSubmitError] = useState<string | null>(null);
-    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [validationError, setValidationError] = useState<string | null>(null);
+    const submitError =
+      validationError ?? createMutation.error?.message ?? null;
     const isFormReady =
       /^[1-9][0-9]*$/.test(amount) &&
       Boolean(walletId) &&
@@ -48,8 +52,8 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
       setWalletId("");
       setWithdrawnOn(today());
       setNote("");
-      setSubmitError(null);
-      setIsSubmitting(false);
+      setValidationError(null);
+      createMutation.reset();
     };
 
     const closeDialog = () => {
@@ -68,48 +72,38 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
       setAmount(digits);
     };
 
-    const saveWithdrawal = async (event: FormEvent<HTMLFormElement>) => {
+    const saveWithdrawal = (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault();
-      if (!currentGroup) return;
+      if (!currentGroup || isSubmitting) return;
 
       const trimmedPurpose = purpose.trim();
       const trimmedNote = note.trim();
       if (!trimmedPurpose) {
-        setSubmitError("用途を入力してください。");
+        setValidationError("用途を入力してください。");
         return;
       }
       if (!/^[1-9][0-9]*$/.test(amount)) {
-        setSubmitError("金額は正の円整数で入力してください。");
+        setValidationError("金額は正の円整数で入力してください。");
         return;
       }
       if (!walletId) {
-        setSubmitError("出金元の財布を選択してください。");
+        setValidationError("出金元の財布を選択してください。");
         return;
       }
-      setIsSubmitting(true);
-      setSubmitError(null);
-      try {
-        await createGroupWithdrawal(currentGroup.id, {
-          purpose: trimmedPurpose,
-          amount,
-          walletId,
-          withdrawnOn: withdrawnOn || today(),
-          ...(trimmedNote ? { note: trimmedNote } : {}),
-        });
-        navigate("/records");
-      } catch (error) {
-        if (error instanceof ApiRequestError && error.status === 401) {
-          unauthenticate();
-          return;
-        }
-        setSubmitError(
-          error instanceof Error
-            ? error.message
-            : "出金を記録できませんでした。",
-        );
-      } finally {
-        setIsSubmitting(false);
-      }
+      setValidationError(null);
+      createMutation.mutate(
+        {
+          groupId: currentGroup.id,
+          input: {
+            purpose: trimmedPurpose,
+            amount,
+            walletId,
+            withdrawnOn: withdrawnOn || today(),
+            ...(trimmedNote ? { note: trimmedNote } : {}),
+          },
+        },
+        { onSuccess: () => navigate("/records") },
+      );
     };
 
     return (
@@ -158,6 +152,16 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
                 />
               </div>
             </label>
+            <QueryErrorNotice
+              message={currentGroup ? errorMessage : null}
+              onRetry={refresh}
+            />
+            <QueryErrorNotice
+              message={
+                walletsQuery.data !== undefined ? walletErrorMessage : null
+              }
+              onRetry={retryWalletLoad}
+            />
             {isLoading ? (
               <Card className="mt-6 p-4">
                 <p className="text-sm" aria-busy="true">
@@ -179,13 +183,13 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
                   </button>
                 )}
               </Card>
-            ) : walletStatus === "idle" || walletStatus === "loading" ? (
+            ) : walletsQuery.isPending ? (
               <Card className="mt-6 p-4">
                 <p className="text-sm" aria-busy="true">
                   財布情報を取得中です…
                 </p>
               </Card>
-            ) : walletStatus === "error" ? (
+            ) : walletsQuery.isError && walletsQuery.data === undefined ? (
               <Card className="mt-6 p-4">
                 <p className="text-sm" role="alert">
                   {walletErrorMessage ?? "財布情報の取得に失敗しました。"}

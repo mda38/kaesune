@@ -1,125 +1,82 @@
-import { useCallback, useEffect, useState, type FormEvent } from "react";
+import { useState, type FormEvent } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { walletQueries } from "../../features/wallet/queries";
+import { groupQueries } from "../../features/group/queries";
 import {
-  createGroupWallet,
-  deleteGroupWallet,
-  getGroupWallets,
-  type Wallet,
-} from "../../features/wallet/api";
-import { getGroupMembers, type GroupMember } from "../../features/group/api";
-import { ApiRequestError } from "../../lib/api-client";
+  useCreateWallet,
+  useDeleteWallet,
+} from "../../features/wallet/mutations";
+import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import type { Wallet } from "../../features/wallet/types";
 import { Heading, Screen } from "../../layouts";
 import { Badge, Card, Icon } from "../../components/ui";
 import { useGroupContext } from "../../features/group/useGroupContext";
 
 export function WalletsPage() {
-  const { currentGroup, errorMessage, isLoading, refresh, unauthenticate } =
-    useGroupContext();
-  const [wallets, setWallets] = useState<Wallet[]>([]);
-  const [members, setMembers] = useState<GroupMember[]>([]);
-  const [dataError, setDataError] = useState<string | null>(null);
-  const [isDataLoading, setIsDataLoading] = useState(false);
+  const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
+  const walletsQuery = useQuery(walletQueries.list(currentGroup?.id));
+  const membersQuery = useQuery(groupQueries.members(currentGroup?.id));
+  const wallets = walletsQuery.data ?? [];
+  const members = membersQuery.data ?? [];
+  const isDataLoading =
+    Boolean(currentGroup) && (walletsQuery.isPending || membersQuery.isPending);
+  const dataError =
+    walletsQuery.error?.message ?? membersQuery.error?.message ?? null;
+  const hasData =
+    walletsQuery.data !== undefined && membersQuery.data !== undefined;
+  const refreshWalletData = async () => {
+    await Promise.all([walletsQuery.refetch(), membersQuery.refetch()]);
+  };
+  const createMutation = useCreateWallet();
+  const deleteMutation = useDeleteWallet();
+  const isCreating = createMutation.isPending;
+  const deleteError = deleteMutation.error?.message ?? null;
+  const deletingWalletId = deleteMutation.isPending
+    ? deleteMutation.variables.walletId
+    : null;
   const [name, setName] = useState("");
   const [ownerType, setOwnerType] = useState<Wallet["ownerType"]>("shared");
   const [ownerMemberId, setOwnerMemberId] = useState("");
-  const [createError, setCreateError] = useState<string | null>(null);
-  const [isCreating, setIsCreating] = useState(false);
-  const [deleteError, setDeleteError] = useState<string | null>(null);
-  const [deletingWalletId, setDeletingWalletId] = useState<string | null>(null);
+  const [validationError, setValidationError] = useState<string | null>(null);
+  const createError = validationError ?? createMutation.error?.message ?? null;
 
-  const refreshWalletData = useCallback(async () => {
-    if (!currentGroup) return;
-
-    setIsDataLoading(true);
-    setDataError(null);
-    try {
-      const [nextWallets, nextMembers] = await Promise.all([
-        getGroupWallets(currentGroup.id),
-        getGroupMembers(currentGroup.id),
-      ]);
-      setWallets(nextWallets);
-      setMembers(nextMembers);
-    } catch (error) {
-      setWallets([]);
-      setMembers([]);
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setDataError(
-        error instanceof Error
-          ? error.message
-          : "財布情報の取得に失敗しました。",
-      );
-    } finally {
-      setIsDataLoading(false);
-    }
-  }, [currentGroup, unauthenticate]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refreshWalletData);
-  }, [refreshWalletData]);
-
-  const createWallet = async (event: FormEvent<HTMLFormElement>) => {
+  const createWallet = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!currentGroup) return;
-
+    if (!currentGroup || isCreating) return;
     const trimmedName = name.trim();
+    createMutation.reset();
     if (!trimmedName) {
-      setCreateError("財布名を入力してください。");
+      setValidationError("財布名を入力してください。");
       return;
     }
     if (ownerType === "personal" && !ownerMemberId) {
-      setCreateError("所有者を選択してください。");
+      setValidationError("所有者を選択してください。");
       return;
     }
-
-    setIsCreating(true);
-    setCreateError(null);
-    try {
-      const wallet = await createGroupWallet(currentGroup.id, {
-        name: trimmedName,
-        ownerType,
-        ...(ownerType === "personal" ? { ownerMemberId } : {}),
-      });
-      setWallets((currentWallets) => [...currentWallets, wallet]);
-      setName("");
-      setOwnerType("shared");
-      setOwnerMemberId("");
-    } catch (error) {
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setCreateError(
-        error instanceof Error ? error.message : "財布を追加できませんでした。",
-      );
-    } finally {
-      setIsCreating(false);
-    }
+    setValidationError(null);
+    createMutation.mutate(
+      {
+        groupId: currentGroup.id,
+        input: {
+          name: trimmedName,
+          ownerType,
+          ...(ownerType === "personal" ? { ownerMemberId } : {}),
+        },
+      },
+      {
+        onSuccess: () => {
+          setName("");
+          setOwnerType("shared");
+          setOwnerMemberId("");
+        },
+      },
+    );
   };
 
-  const deleteWallet = async (wallet: Wallet) => {
-    if (!currentGroup) return;
+  const deleteWallet = (wallet: Wallet) => {
+    if (!currentGroup || deleteMutation.isPending) return;
     if (!window.confirm(`「${wallet.name}」を削除しますか？`)) return;
-
-    setDeletingWalletId(wallet.id);
-    setDeleteError(null);
-    try {
-      await deleteGroupWallet(currentGroup.id, wallet.id);
-      setWallets((currentWallets) =>
-        currentWallets.filter((item) => item.id !== wallet.id),
-      );
-    } catch (error) {
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setDeleteError(
-        error instanceof Error ? error.message : "財布を削除できませんでした。",
-      );
-    } finally {
-      setDeletingWalletId(null);
-    }
+    deleteMutation.mutate({ groupId: currentGroup.id, walletId: wallet.id });
   };
 
   const sharedWallets = wallets.filter(
@@ -137,6 +94,14 @@ export function WalletsPage() {
       <Heading
         eyebrow={currentGroup?.name ?? "支払い元と返済先"}
         title="財布管理"
+      />
+      <QueryErrorNotice
+        message={currentGroup ? errorMessage : null}
+        onRetry={refresh}
+      />
+      <QueryErrorNotice
+        message={hasData ? dataError : null}
+        onRetry={refreshWalletData}
       />
       {isLoading ? (
         <Card className="p-4">
@@ -165,7 +130,7 @@ export function WalletsPage() {
             財布情報を取得中です…
           </p>
         </Card>
-      ) : dataError ? (
+      ) : dataError && !hasData ? (
         <Card className="p-4">
           <p className="text-sm" role="alert">
             {dataError}

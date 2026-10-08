@@ -42,3 +42,7 @@
 - `pnpm verify:wallet-delete` は、検証専用 fixture を投入して未参照財布の削除と参照中財布の削除拒否を実画面で確認し、`verification-artifacts/wallet-delete-after.png` を保存する
 - テスト運用の詳細は [テスト運用](test-operations.md) を参照する
 - `pnpm build` で Next の開発キャッシュ由来の型エラーが出る場合は、`apps/web/.next` を消してから再実行する
+
+## Server State の検証
+
+`pnpm verify:server-state` は API を固定レスポンスに置き換え、Query の共有・更新後の反映・retry・背景再取得失敗・認証失効・ログアウト・キャンセルを実画面で検証する。DB と Worker の起動は不要。初回は `pnpm verify:install-browser` で Chromium を導入する。実際の Backend・DB との結合は既存の feature 別 verification で別途確認する。

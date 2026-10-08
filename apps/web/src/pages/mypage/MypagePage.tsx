@@ -1,3 +1,4 @@
+import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
 import { Link, useNavigate } from "react-router-dom";
 import { authClient } from "../../features/auth/auth-client";
 import { Heading, Screen } from "../../layouts";
@@ -20,6 +21,10 @@ export function MypagePage() {
         eyebrow="アカウントとグループ"
         title="マイページ"
         right={<Avatar name={currentUser?.name ?? "ユーザー"} />}
+      />
+      <QueryErrorNotice
+        message={currentGroup ? errorMessage : null}
+        onRetry={refresh}
       />
       <Card className="mb-6 p-4">
         <small className="block text-xs text-neutral-600">現在のグループ</small>

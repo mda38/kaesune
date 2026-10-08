@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useRef } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { claimQueries } from "../../features/claim/queries";
 import { Link } from "react-router-dom";
-import { ApiRequestError } from "../../lib/api-client";
-import { getGroupClaims, type ClaimListItem } from "../../features/claim/api";
 import { Heading, Screen } from "../../layouts";
 import {
   PaymentDialog,
@@ -13,38 +14,14 @@ import { useGroupContext } from "../../features/group/useGroupContext";
 
 export function HomePage() {
   const paymentDialogRef = useRef<PaymentDialogHandle>(null);
-  const { currentGroup, unauthenticate } = useGroupContext();
-  const [claims, setClaims] = useState<ClaimListItem[]>([]);
-  const [claimsError, setClaimsError] = useState<string | null>(null);
-  const [areClaimsLoading, setAreClaimsLoading] = useState(false);
-
-  const refreshClaims = useCallback(async () => {
-    if (!currentGroup) {
-      setClaims([]);
-      return;
-    }
-
-    setAreClaimsLoading(true);
-    setClaimsError(null);
-    try {
-      setClaims(await getGroupClaims(currentGroup.id));
-    } catch (error) {
-      setClaims([]);
-      if (error instanceof ApiRequestError && error.status === 401) {
-        unauthenticate();
-        return;
-      }
-      setClaimsError(
-        error instanceof Error ? error.message : "請求の取得に失敗しました。",
-      );
-    } finally {
-      setAreClaimsLoading(false);
-    }
-  }, [currentGroup, unauthenticate]);
-
-  useEffect(() => {
-    void Promise.resolve().then(refreshClaims);
-  }, [refreshClaims]);
+  const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
+  const query = useQuery(claimQueries.list(currentGroup?.id));
+  const claims = query.data ?? [];
+  const areClaimsLoading = Boolean(currentGroup) && query.isPending;
+  const claimsError = query.error?.message ?? null;
+  const refreshClaims = async () => {
+    await query.refetch();
+  };
 
   const unsettledClaims = claims.filter(
     (claim) =>
@@ -84,11 +61,16 @@ export function HomePage() {
         <p id="claim-summary-heading" className="text-xs font-bold text-black">
           請求総額
         </p>
-        {areClaimsLoading ? (
+        <QueryErrorNotice message={errorMessage} onRetry={refresh} />
+        <QueryErrorNotice
+          message={query.data !== undefined ? claimsError : null}
+          onRetry={refreshClaims}
+        />
+        {isLoading || areClaimsLoading ? (
           <p className="mt-2 text-sm font-bold" aria-busy="true">
             請求金額を取得中です…
           </p>
-        ) : claimsError ? (
+        ) : claimsError && query.data === undefined ? (
           <div className="mt-2">
             <p className="text-sm font-bold" role="alert">
               {claimsError}
@@ -101,7 +83,11 @@ export function HomePage() {
               再試行
             </button>
           </div>
-        ) : (
+        ) : !currentGroup && !errorMessage ? (
+          <p className="mt-2 text-sm">
+            現在、所属しているグループはありません。
+          </p>
+        ) : currentGroup ? (
           <>
             <p className="mt-1 text-5xl leading-none font-extrabold tracking-[-0.04em]">
               ¥{unsettledAmount.toLocaleString("ja-JP")}
@@ -114,7 +100,7 @@ export function HomePage() {
               </Badge>
             </div>
           </>
-        )}
+        ) : null}
       </section>
       <button
         type="button"
