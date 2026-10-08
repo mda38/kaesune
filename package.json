@@ -13,6 +13,7 @@
     "verify:records-delete": "pnpm --filter backend verify:seed-records-delete && playwright test verification/records-delete.spec.ts",
     "verify:payment-create": "pnpm --filter backend verify:seed-payment-create && playwright test verification/payment-create.spec.ts",
     "verify:wallet-delete": "pnpm --filter backend verify:seed-wallet-delete && playwright test verification/wallet-delete.spec.ts",
+    "verify:focus": "playwright test --config playwright.focus.config.ts",
     "verify:server-state": "playwright test --config playwright.query.config.ts",
     "prepare": "husky"
   },
