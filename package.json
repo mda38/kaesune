@@ -27,8 +27,8 @@
     "**/*.{js,jsx,ts,tsx,mjs,cjs,json,md,yml,yaml,css,scss,html}": [
       "prettier --check --ignore-unknown"
     ],
-    "apps/frontend/**/*.{js,jsx,ts,tsx,mjs,cjs}": [
-      "eslint --config apps/frontend/eslint.config.mjs --max-warnings=0"
+    "apps/web/**/*.{js,jsx,ts,tsx,mjs,cjs}": [
+      "pnpm --filter web exec eslint --max-warnings=0"
     ],
     "apps/backend/**/*.{js,jsx,ts,tsx,mjs,cjs}": [
       "eslint --config apps/backend/eslint.config.mjs --max-warnings=0"
