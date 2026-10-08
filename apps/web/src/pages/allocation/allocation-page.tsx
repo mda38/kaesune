@@ -1,6 +1,6 @@
 import { StatusCard } from "@/pages/allocation/status-card";
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { withdrawalQueries } from "@/features/withdrawal/queries";
 import { walletQueries } from "@/features/wallet/queries";
 import { groupQueries } from "@/features/group/queries";
@@ -32,11 +32,11 @@ type AllocationOverride = {
 export function AllocationPage() {
   const { withdrawalId } = useParams();
   const navigate = useNavigate();
+  const client = useQueryClient();
   const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
-  const withdrawalQuery = useQuery({
-    ...withdrawalQueries.list(currentGroup?.id),
-    select: (items) => items.find((item) => item.id === withdrawalId) ?? null,
-  });
+  const withdrawalQuery = useQuery(
+    withdrawalQueries.detail(currentGroup?.id, withdrawalId, client),
+  );
   const membersQuery = useQuery(groupQueries.members(currentGroup?.id));
   const walletsQuery = useQuery(walletQueries.list(currentGroup?.id));
   const withdrawal = withdrawalQuery.data;

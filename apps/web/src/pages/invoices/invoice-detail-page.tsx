@@ -3,7 +3,7 @@ import {
   useDeleteClaim,
   useUpdateClaimStatus,
 } from "@/features/claim/mutations";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryErrorNotice } from "@/components/ui/query-error-notice";
 import { claimQueries } from "@/features/claim/queries";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -16,11 +16,11 @@ import { useGroupContext } from "@/features/group/use-group-context";
 export function InvoiceDetailPage() {
   const { claimId } = useParams();
   const navigate = useNavigate();
+  const client = useQueryClient();
   const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
-  const query = useQuery({
-    ...claimQueries.list(currentGroup?.id),
-    select: (items) => items.find((item) => item.id === claimId) ?? null,
-  });
+  const query = useQuery(
+    claimQueries.detail(currentGroup?.id, claimId, client),
+  );
   const claim = query.data;
   const areClaimsLoading = Boolean(currentGroup) && query.isPending;
   const claimsError = query.error?.message ?? null;

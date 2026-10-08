@@ -33,9 +33,14 @@ export const useDeleteWithdrawal = () => {
       groupId: string;
       withdrawalId: string;
     }) => deleteGroupWithdrawal(groupId, withdrawalId),
-    onSuccess: (_data, { groupId }) =>
-      client.invalidateQueries({
+    onSuccess: (_data, { groupId, withdrawalId }) => {
+      client.setQueryData(
+        withdrawalQueries.detail(groupId, withdrawalId).queryKey,
+        null,
+      );
+      return client.invalidateQueries({
         queryKey: withdrawalQueries.list(groupId).queryKey,
-      }),
+      });
+    },
   });
 };

@@ -2,7 +2,7 @@ import { DetailRow } from "@/pages/records/detail-row";
 import { useState } from "react";
 import { walletQueries } from "@/features/wallet/queries";
 import { useDeleteWithdrawal } from "@/features/withdrawal/mutations";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { QueryErrorNotice } from "@/components/ui/query-error-notice";
 import { withdrawalQueries } from "@/features/withdrawal/queries";
 import Delete01Icon from "@hugeicons/core-free-icons/Delete01Icon";
@@ -15,11 +15,11 @@ import { useGroupContext } from "@/features/group/use-group-context";
 export function RecordDetailPage() {
   const { withdrawalId } = useParams();
   const navigate = useNavigate();
+  const client = useQueryClient();
   const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
-  const query = useQuery({
-    ...withdrawalQueries.list(currentGroup?.id),
-    select: (items) => items.find((item) => item.id === withdrawalId) ?? null,
-  });
+  const query = useQuery(
+    withdrawalQueries.detail(currentGroup?.id, withdrawalId, client),
+  );
   const withdrawal = query.data;
   const isDataLoading = Boolean(currentGroup) && query.isPending;
   const dataError = query.error?.message ?? null;

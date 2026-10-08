@@ -1,7 +1,35 @@
+import type { Withdrawal } from "@/features/withdrawal/types";
 import { queryOptions, skipToken } from "@tanstack/react-query";
-import { getGroupWithdrawals } from "@/features/withdrawal/api";
+import {
+  getGroupWithdrawal,
+  getGroupWithdrawals,
+} from "@/features/withdrawal/api";
+
+import type { QueryClient } from "@tanstack/react-query";
 
 export const withdrawalQueries = {
+  detail: (
+    groupId: string | undefined,
+    withdrawalId: string | undefined,
+    client?: QueryClient,
+  ) =>
+    queryOptions({
+      queryKey: ["groups", groupId, "withdrawals", "detail", withdrawalId],
+      queryFn:
+        groupId && withdrawalId
+          ? ({ signal }) => getGroupWithdrawal(groupId, withdrawalId, signal)
+          : skipToken,
+      initialData: () => {
+        const listKey = ["groups", groupId, "withdrawals"];
+        if (client?.getQueryState(listKey)?.isInvalidated) return undefined;
+        return client
+          ?.getQueryData<Withdrawal[]>(listKey)
+          ?.find((item) => item.id === withdrawalId);
+      },
+      initialDataUpdatedAt: () =>
+        client?.getQueryState(["groups", groupId, "withdrawals"])
+          ?.dataUpdatedAt,
+    }),
   list: (groupId: string | undefined) =>
     queryOptions({
       queryKey: ["groups", groupId, "withdrawals"],

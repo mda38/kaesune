@@ -842,6 +842,81 @@ api.openapi(
   },
 );
 
+const readClaims = async (
+  db: Database,
+  groupId: string,
+  status?: "unsettled" | "settled",
+  claimId?: string,
+) => {
+  const rows = await db
+    .select({
+      claim: claims,
+      debtorMemberName: users.name,
+      walletName: wallets.name,
+    })
+    .from(claims)
+    .innerJoin(
+      groupMembers,
+      and(
+        eq(groupMembers.id, claims.debtorMemberId),
+        eq(groupMembers.groupId, groupId),
+      ),
+    )
+    .innerJoin(users, eq(users.id, groupMembers.userId))
+    .innerJoin(
+      wallets,
+      and(eq(wallets.id, claims.walletId), eq(wallets.groupId, groupId)),
+    )
+    .where(
+      and(
+        eq(claims.groupId, groupId),
+        status ? eq(claims.status, status) : undefined,
+        claimId ? eq(claims.id, claimId) : undefined,
+      ),
+    )
+    .orderBy(desc(claims.createdAt));
+  const claimIds = rows.map(({ claim }) => claim.id);
+  const itemRows =
+    claimIds.length === 0
+      ? []
+      : await db
+          .select({
+            claimId: claimItems.claimId,
+            withdrawalId: withdrawals.id,
+            purpose: withdrawals.purpose,
+            amount: claimItems.amount,
+          })
+          .from(claimItems)
+          .innerJoin(allocations, eq(allocations.id, claimItems.allocationId))
+          .innerJoin(withdrawals, eq(withdrawals.id, allocations.withdrawalId))
+          .where(
+            and(
+              inArray(claimItems.claimId, claimIds),
+              eq(withdrawals.groupId, groupId),
+            ),
+          )
+          .orderBy(asc(claimItems.createdAt), asc(claimItems.id));
+  const itemsByClaimId = new Map<
+    string,
+    { withdrawalId: string; purpose: string; amount: string }[]
+  >();
+  for (const item of itemRows) {
+    const items = itemsByClaimId.get(item.claimId) ?? [];
+    items.push({
+      withdrawalId: item.withdrawalId,
+      purpose: item.purpose,
+      amount: toAmount(item.amount),
+    });
+    itemsByClaimId.set(item.claimId, items);
+  }
+  return rows.map(({ claim, debtorMemberName, walletName }) => ({
+    ...serializeClaim(claim),
+    debtorMemberName,
+    walletName,
+    items: itemsByClaimId.get(claim.id) ?? [],
+  }));
+};
+
 api.openapi(
   createRoute({
     method: "get",
@@ -867,77 +942,8 @@ api.openapi(
     const { status } = c.req.valid("query");
     const db = c.get("db");
     await requireMember(db, groupId, c.req.raw, c.env);
-    const rows = await db
-      .select({
-        claim: claims,
-        debtorMemberName: users.name,
-        walletName: wallets.name,
-      })
-      .from(claims)
-      .innerJoin(
-        groupMembers,
-        and(
-          eq(groupMembers.id, claims.debtorMemberId),
-          eq(groupMembers.groupId, groupId),
-        ),
-      )
-      .innerJoin(users, eq(users.id, groupMembers.userId))
-      .innerJoin(
-        wallets,
-        and(eq(wallets.id, claims.walletId), eq(wallets.groupId, groupId)),
-      )
-      .where(
-        status
-          ? and(eq(claims.groupId, groupId), eq(claims.status, status))
-          : eq(claims.groupId, groupId),
-      )
-      .orderBy(desc(claims.createdAt));
-    const claimIds = rows.map(({ claim }) => claim.id);
-    const itemRows =
-      claimIds.length === 0
-        ? []
-        : await db
-            .select({
-              claimId: claimItems.claimId,
-              withdrawalId: withdrawals.id,
-              purpose: withdrawals.purpose,
-              amount: claimItems.amount,
-            })
-            .from(claimItems)
-            .innerJoin(allocations, eq(allocations.id, claimItems.allocationId))
-            .innerJoin(
-              withdrawals,
-              eq(withdrawals.id, allocations.withdrawalId),
-            )
-            .where(
-              and(
-                inArray(claimItems.claimId, claimIds),
-                eq(withdrawals.groupId, groupId),
-              ),
-            )
-            .orderBy(asc(claimItems.createdAt), asc(claimItems.id));
-    const itemsByClaimId = new Map<
-      string,
-      { withdrawalId: string; purpose: string; amount: string }[]
-    >();
-    for (const item of itemRows) {
-      const items = itemsByClaimId.get(item.claimId) ?? [];
-      items.push({
-        withdrawalId: item.withdrawalId,
-        purpose: item.purpose,
-        amount: toAmount(item.amount),
-      });
-      itemsByClaimId.set(item.claimId, items);
-    }
     return c.json(
-      noStore(c, {
-        claims: rows.map(({ claim, debtorMemberName, walletName }) => ({
-          ...serializeClaim(claim),
-          debtorMemberName,
-          walletName,
-          items: itemsByClaimId.get(claim.id) ?? [],
-        })),
-      }),
+      noStore(c, { claims: await readClaims(db, groupId, status) }),
     );
   },
 );
@@ -949,7 +955,7 @@ api.openapi(
     request: { params: z.object({ groupId: uuid, claimId: uuid }) },
     responses: {
       200: {
-        content: { "application/json": { schema: claimSchema } },
+        content: { "application/json": { schema: claimListItemSchema } },
         description: "Claim",
       },
       ...errorResponses,
@@ -959,13 +965,10 @@ api.openapi(
     const { groupId, claimId } = c.req.valid("param");
     const db = c.get("db");
     await requireMember(db, groupId, c.req.raw, c.env);
-    const [claim] = await db
-      .select()
-      .from(claims)
-      .where(and(eq(claims.id, claimId), eq(claims.groupId, groupId)));
+    const [claim] = await readClaims(db, groupId, undefined, claimId);
     if (!claim)
       throw new ApiError(404, "RESOURCE_NOT_FOUND", "請求が見つかりません。");
-    return c.json(noStore(c, serializeClaim(claim)));
+    return c.json(noStore(c, claim));
   },
 );
 

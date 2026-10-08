@@ -147,6 +147,14 @@ async function mockApi(page: Page) {
       );
       return;
     }
+    if (method === "GET" && /\/(claims|withdrawals)\/[^/]+$/.test(path)) {
+      const items = path.includes("/claims/")
+        ? state.claims
+        : state.withdrawals;
+      const item = items.find((item) => path.endsWith(`/${item.id}`));
+      await respond(item ?? { message: "見つかりません" }, item ? 200 : 404);
+      return;
+    }
     if (state.mutationStatus !== 200) {
       await respond({ message: "更新エラー" }, state.mutationStatus);
       return;
@@ -244,6 +252,9 @@ test("Home・一覧・詳細は同じ請求キャッシュを共有し、精算�
     page.getByRole("heading", { name: "検証ユーザーさんへの請求" }),
   ).toBeVisible();
   expect(state.calls.get(claimsPath)).toBe(before);
+  expect(
+    state.calls.get("GET /api/groups/group-1/claims/claim-1"),
+  ).toBeUndefined();
   await page.getByRole("checkbox").click();
   await expect(
     page.getByText("精算が完了しました", { exact: true }),
@@ -446,7 +457,7 @@ test("配分保存だけ成功した場合も出金を更新し、請求発行�
   await expect(page.getByText("請求発行エラー", { exact: true })).toBeVisible();
   expect(state.withdrawals[0].status).toBe("allocated");
   expect(
-    state.calls.get("GET /api/groups/group-1/withdrawals"),
+    state.calls.get("GET /api/groups/group-1/withdrawals/withdrawal-1"),
   ).toBeGreaterThanOrEqual(2);
   expect(
     state.calls.get("POST /api/groups/group-1/withdrawals/withdrawal-1/claims"),
@@ -497,3 +508,34 @@ test("Mutation の401もログインへ戻す", async ({ page }) => {
   ).toBeVisible();
   expect(state.calls.get("PATCH /api/groups/group-1/claims/claim-1")).toBe(1);
 });
+
+for (const [path, message, apiPath] of [
+  [
+    "/records/missing",
+    "指定された出金記録は見つかりませんでした。",
+    "withdrawals/missing",
+  ],
+  [
+    "/invoices/missing",
+    "指定された請求は見つかりませんでした。",
+    "claims/missing",
+  ],
+  [
+    "/records/missing/claims/new",
+    "指定された出金記録は見つかりませんでした。",
+    "withdrawals/missing",
+  ],
+]) {
+  test(`詳細の直接アクセスは全件取得せず404を表示: ${path}`, async ({
+    page,
+  }) => {
+    const state = await mockApi(page);
+    await page.goto(path);
+    await expect(page.getByText(message, { exact: true })).toBeVisible();
+    expect(state.calls.get(`GET /api/groups/group-1/${apiPath}`)).toBe(1);
+    expect(state.calls.get(claimsPath)).toBeUndefined();
+    expect(
+      state.calls.get("GET /api/groups/group-1/withdrawals"),
+    ).toBeUndefined();
+  });
+}
