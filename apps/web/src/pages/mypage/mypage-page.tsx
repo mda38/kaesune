@@ -1,9 +1,12 @@
-import { QueryErrorNotice } from "../../components/ui/query-error-notice";
+import { QueryErrorNotice } from "@/components/ui/query-error-notice";
 import { Link, useNavigate } from "react-router-dom";
-import { authClient } from "../../features/auth/auth-client";
-import { Heading, Screen } from "../../layouts";
-import { Avatar, Card, Icon } from "../../components/ui";
-import { useGroupContext } from "../../features/group/use-group-context";
+import { authClient } from "@/features/auth/auth-client";
+import { Heading } from "@/layouts/heading";
+import { Screen } from "@/layouts/screen";
+import { Avatar } from "@/components/ui/avatar";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { useGroupContext } from "@/features/group/use-group-context";
 
 export function MypagePage() {
   const navigate = useNavigate();

@@ -1,16 +1,18 @@
 import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { QueryErrorNotice } from "../../components/ui/query-error-notice";
-import { claimQueries } from "../../features/claim/queries";
+import { QueryErrorNotice } from "@/components/ui/query-error-notice";
+import { claimQueries } from "@/features/claim/queries";
 import { Link } from "react-router-dom";
-import { Heading, Screen } from "../../layouts";
+import { Heading } from "@/layouts/heading";
+import { Screen } from "@/layouts/screen";
 import {
   PaymentDialog,
   type PaymentDialogHandle,
-} from "../../features/withdrawal/components/withdrawal-dialog";
-import { Badge, Icon } from "../../components/ui";
-import walletIllustration from "../../assets/home-wallet-illustration.png";
-import { useGroupContext } from "../../features/group/use-group-context";
+} from "@/features/withdrawal/components/withdrawal-dialog";
+import { Badge } from "@/components/ui/badge";
+import { Icon } from "@/components/ui/icon";
+import walletIllustration from "@/assets/home-wallet-illustration.png";
+import { useGroupContext } from "@/features/group/use-group-context";
 
 export function HomePage() {
   const paymentDialogRef = useRef<PaymentDialogHandle>(null);

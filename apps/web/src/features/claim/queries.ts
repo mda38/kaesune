@@ -1,5 +1,5 @@
 import { queryOptions, skipToken } from "@tanstack/react-query";
-import { getGroupClaims } from "./api";
+import { getGroupClaims } from "@/features/claim/api";
 
 export const claimQueries = {
   list: (groupId: string | undefined) =>

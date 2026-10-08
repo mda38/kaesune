@@ -1,12 +1,16 @@
+import { Message } from "@/pages/invoices/invoices-message";
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { QueryErrorNotice } from "../../components/ui/query-error-notice";
-import { claimQueries } from "../../features/claim/queries";
+import { QueryErrorNotice } from "@/components/ui/query-error-notice";
+import { claimQueries } from "@/features/claim/queries";
 import { Link } from "react-router-dom";
-import type { ClaimListItem } from "../../features/claim/types";
-import { Heading, Screen } from "../../layouts";
-import { Badge, Card, Icon } from "../../components/ui";
-import { useGroupContext } from "../../features/group/use-group-context";
+import type { ClaimListItem } from "@/features/claim/types";
+import { Heading } from "@/layouts/heading";
+import { Screen } from "@/layouts/screen";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { Icon } from "@/components/ui/icon";
+import { useGroupContext } from "@/features/group/use-group-context";
 
 type ClaimFilter = "all" | ClaimListItem["status"];
 
@@ -120,36 +124,5 @@ export function InvoicesPage() {
         </Card>
       )}
     </Screen>
-  );
-}
-
-function Message({
-  children,
-  error,
-  onRetry,
-}: {
-  children: string;
-  error?: string | null;
-  onRetry?: () => void | Promise<void>;
-}) {
-  return (
-    <Card className="p-4">
-      <p
-        className="text-sm text-neutral-600"
-        role={error ? "alert" : undefined}
-        aria-busy={!error && children.endsWith("…") ? "true" : undefined}
-      >
-        {children}
-      </p>
-      {onRetry && (
-        <button
-          type="button"
-          onClick={() => void onRetry()}
-          className="mt-3 text-sm font-bold underline"
-        >
-          再試行
-        </button>
-      )}
-    </Card>
   );
 }

@@ -1,4 +1,4 @@
-import type { Withdrawal } from "../types";
+import type { Withdrawal } from "@/features/withdrawal/types";
 import { Link } from "react-router-dom";
 
 export function WithdrawalList({

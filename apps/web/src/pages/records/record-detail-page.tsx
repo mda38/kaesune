@@ -1,15 +1,16 @@
+import { DetailRow } from "@/pages/records/detail-row";
 import { useState } from "react";
-import { walletQueries } from "../../features/wallet/queries";
-import { useDeleteWithdrawal } from "../../features/withdrawal/mutations";
+import { walletQueries } from "@/features/wallet/queries";
+import { useDeleteWithdrawal } from "@/features/withdrawal/mutations";
 import { useQuery } from "@tanstack/react-query";
-import { QueryErrorNotice } from "../../components/ui/query-error-notice";
-import { withdrawalQueries } from "../../features/withdrawal/queries";
+import { QueryErrorNotice } from "@/components/ui/query-error-notice";
+import { withdrawalQueries } from "@/features/withdrawal/queries";
 import Delete01Icon from "@hugeicons/core-free-icons/Delete01Icon";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, useNavigate, useParams } from "react-router-dom";
-import { BottomNav } from "../../layouts";
-import { Card } from "../../components/ui";
-import { useGroupContext } from "../../features/group/use-group-context";
+import { BottomNav } from "@/layouts/bottom-nav";
+import { Card } from "@/components/ui/card";
+import { useGroupContext } from "@/features/group/use-group-context";
 
 export function RecordDetailPage() {
   const { withdrawalId } = useParams();
@@ -178,14 +179,5 @@ export function RecordDetailPage() {
       )}
       <BottomNav active="records" />
     </main>
-  );
-}
-
-function DetailRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="border-b border-black py-3.5">
-      <dt className="mb-2 text-xs font-medium text-neutral-500">{label}</dt>
-      <dd className="text-base font-bold">{value}</dd>
-    </div>
   );
 }

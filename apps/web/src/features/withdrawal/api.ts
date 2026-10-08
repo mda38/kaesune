@@ -1,7 +1,13 @@
-import { del, get, post } from "../../lib/api-client";
-import type { CreateWithdrawalInput, Withdrawal } from "./types";
+import { del, get, post } from "@/lib/api-client";
+import type {
+  CreateWithdrawalInput,
+  Withdrawal,
+} from "@/features/withdrawal/types";
 
-export type { CreateWithdrawalInput, Withdrawal } from "./types";
+export type {
+  CreateWithdrawalInput,
+  Withdrawal,
+} from "@/features/withdrawal/types";
 
 export const getGroupWithdrawals = async (
   groupId: string,

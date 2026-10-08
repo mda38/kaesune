@@ -1,7 +1,7 @@
-import { del, get, patch } from "../../lib/api-client";
-import type { Claim, ClaimListItem } from "./types";
+import { del, get, patch } from "@/lib/api-client";
+import type { Claim, ClaimListItem } from "@/features/claim/types";
 
-export type { Claim, ClaimListItem } from "./types";
+export type { Claim, ClaimListItem } from "@/features/claim/types";
 
 export const getGroupClaims = async (groupId: string, signal?: AbortSignal) => {
   const response = await get<{ claims: ClaimListItem[] }>(

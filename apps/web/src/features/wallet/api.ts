@@ -1,7 +1,7 @@
-import { del, get, post } from "../../lib/api-client";
-import type { CreateWalletInput, Wallet } from "./types";
+import { del, get, post } from "@/lib/api-client";
+import type { CreateWalletInput, Wallet } from "@/features/wallet/types";
 
-export type { CreateWalletInput, Wallet } from "./types";
+export type { CreateWalletInput, Wallet } from "@/features/wallet/types";
 
 export const getGroupWallets = async (
   groupId: string,

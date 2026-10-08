@@ -1,5 +1,5 @@
 import { MutationCache, QueryCache, QueryClient } from "@tanstack/react-query";
-import { ApiRequestError } from "./api-client";
+import { ApiRequestError } from "@/lib/api-client";
 
 export const createQueryClient = (onUnauthenticated: () => void) => {
   const handleError = (error: Error) => {

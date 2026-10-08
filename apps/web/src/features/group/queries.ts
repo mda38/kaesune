@@ -1,5 +1,5 @@
 import { queryOptions, skipToken } from "@tanstack/react-query";
-import { getGroupMembers, getCurrentUser } from "./api";
+import { getGroupMembers, getCurrentUser } from "@/features/group/api";
 
 export const groupQueries = {
   me: () =>

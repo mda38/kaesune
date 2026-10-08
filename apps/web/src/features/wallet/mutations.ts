@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createGroupWallet, deleteGroupWallet } from "./api";
-import type { CreateWalletInput } from "./types";
-import { walletQueries } from "./queries";
+import { createGroupWallet, deleteGroupWallet } from "@/features/wallet/api";
+import type { CreateWalletInput } from "@/features/wallet/types";
+import { walletQueries } from "@/features/wallet/queries";
 
 export const useCreateWallet = () => {
   const client = useQueryClient();

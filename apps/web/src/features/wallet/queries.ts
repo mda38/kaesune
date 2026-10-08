@@ -1,5 +1,5 @@
 import { queryOptions, skipToken } from "@tanstack/react-query";
-import { getGroupWallets } from "./api";
+import { getGroupWallets } from "@/features/wallet/api";
 
 export const walletQueries = {
   list: (groupId: string | undefined) =>

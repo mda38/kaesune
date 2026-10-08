@@ -7,12 +7,12 @@ import {
 } from "react";
 import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { walletQueries } from "../../wallet/queries";
-import { useCreateWithdrawal } from "../mutations";
-import { QueryErrorNotice } from "../../../components/ui/query-error-notice";
-import { useGroupContext } from "../../group/use-group-context";
-import { Screen } from "../../../layouts";
-import { Card } from "../../../components/ui";
+import { walletQueries } from "@/features/wallet/queries";
+import { useCreateWithdrawal } from "@/features/withdrawal/mutations";
+import { QueryErrorNotice } from "@/components/ui/query-error-notice";
+import { useGroupContext } from "@/features/group/use-group-context";
+import { Screen } from "@/layouts/screen";
+import { Card } from "@/components/ui/card";
 
 export type PaymentDialogHandle = {
   open: () => void;

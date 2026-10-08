@@ -1,7 +1,10 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { createGroupWithdrawal, deleteGroupWithdrawal } from "./api";
-import type { CreateWithdrawalInput } from "./types";
-import { withdrawalQueries } from "./queries";
+import {
+  createGroupWithdrawal,
+  deleteGroupWithdrawal,
+} from "@/features/withdrawal/api";
+import type { CreateWithdrawalInput } from "@/features/withdrawal/types";
+import { withdrawalQueries } from "@/features/withdrawal/queries";
 
 export const useCreateWithdrawal = () => {
   const client = useQueryClient();

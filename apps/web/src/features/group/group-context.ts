@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import type { CurrentUser, Group } from "./types";
+import type { CurrentUser, Group } from "@/features/group/types";
 
 export type GroupContextValue = {
   currentGroup: Group | null;

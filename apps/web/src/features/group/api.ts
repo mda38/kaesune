@@ -1,7 +1,7 @@
-import { get } from "../../lib/api-client";
-import type { CurrentUser, GroupMember } from "./types";
+import { get } from "@/lib/api-client";
+import type { CurrentUser, GroupMember } from "@/features/group/types";
 
-export type { CurrentUser, Group, GroupMember } from "./types";
+export type { CurrentUser, Group, GroupMember } from "@/features/group/types";
 
 export const getCurrentUser = (signal?: AbortSignal) => {
   return get<CurrentUser>("/api/me", signal);

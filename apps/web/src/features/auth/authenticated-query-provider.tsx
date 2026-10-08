@@ -1,7 +1,7 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { Navigate } from "react-router-dom";
-import { createQueryClient } from "../../lib/query-client";
+import { createQueryClient } from "@/lib/query-client";
 
 // RequireSession の userId key ごとに独立したキャッシュを作る。
 export function AuthenticatedQueryProvider({

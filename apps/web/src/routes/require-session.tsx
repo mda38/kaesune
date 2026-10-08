@@ -1,7 +1,7 @@
 import { Navigate, Outlet } from "react-router-dom";
-import { authClient } from "../features/auth/auth-client";
-import { AuthenticatedQueryProvider } from "../features/auth/authenticated-query-provider";
-import { GroupProvider } from "../features/group/group-provider";
+import { authClient } from "@/features/auth/auth-client";
+import { AuthenticatedQueryProvider } from "@/features/auth/authenticated-query-provider";
+import { GroupProvider } from "@/features/group/group-provider";
 
 export function RequireSession() {
   const { data: session, isPending } = authClient.useSession();
