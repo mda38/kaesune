@@ -92,6 +92,7 @@ const expectIndicator = async (page: Page) => {
   ).toBe(true);
   await expect(active).toHaveCSS("outline-style", "solid");
   await expect(active).toHaveCSS("outline-width", "3px");
+  await expect(active).toHaveCSS("outline-offset", "-3px");
 };
 
 test("主要画面のフォーム・ボタン・リンクへTabで移動するとフォーカスが見える", async ({
@@ -102,6 +103,7 @@ test("主要画面のフォーム・ボタン・リンクへTabで移動する�
     "/wallets",
     "/records/withdrawal-1/claims/new",
     "/home",
+    "/mypage",
   ]) {
     await page.goto(path);
     await expect(page.locator("main").first()).toBeVisible();
