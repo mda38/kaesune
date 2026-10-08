@@ -1,14 +1,12 @@
 import type { ReactNode } from "react";
 
-export function Heading({
-  eyebrow,
-  title,
-  right,
-}: {
+type Props = {
   eyebrow: string;
   title: string;
   right?: ReactNode;
-}) {
+};
+
+export function Heading({ eyebrow, title, right }: Props) {
   return (
     <header className="mb-8 flex items-center justify-between">
       <div>

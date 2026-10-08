@@ -3,19 +3,21 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 
+type Props = {
+  title: string;
+  wallets: Wallet[];
+  ownerNameById?: Map<string, string>;
+  deletingWalletId: string | null;
+  onDelete: (wallet: Wallet) => void;
+};
+
 export function WalletSection({
   title,
   wallets,
   ownerNameById,
   deletingWalletId,
   onDelete,
-}: {
-  title: string;
-  wallets: Wallet[];
-  ownerNameById?: Map<string, string>;
-  deletingWalletId: string | null;
-  onDelete: (wallet: Wallet) => void;
-}) {
+}: Props) {
   return (
     <section className="mb-6">
       <h2 className="mb-3 text-[15px] font-bold">{title}</h2>

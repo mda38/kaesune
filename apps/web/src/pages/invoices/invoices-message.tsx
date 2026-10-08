@@ -1,14 +1,12 @@
 import { Card } from "@/components/ui/card";
 
-export function Message({
-  children,
-  error,
-  onRetry,
-}: {
+type Props = {
   children: string;
   error?: string | null;
   onRetry?: () => void | Promise<void>;
-}) {
+};
+
+export function Message({ children, error, onRetry }: Props) {
   return (
     <Card className="p-4">
       <p

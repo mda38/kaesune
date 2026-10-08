@@ -3,7 +3,9 @@ import { useQuery } from "@tanstack/react-query";
 import { GroupContext } from "@/features/group/group-context";
 import { groupQueries } from "@/features/group/queries";
 
-export function GroupProvider({ children }: { children: ReactNode }) {
+type Props = { children: ReactNode };
+
+export function GroupProvider({ children }: Props) {
   const query = useQuery(groupQueries.me());
   const currentUser = query.data ?? null;
 

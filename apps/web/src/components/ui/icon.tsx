@@ -11,6 +11,8 @@ import UserGroupIcon from "@hugeicons/core-free-icons/UserGroupIcon";
 import UserIcon from "@hugeicons/core-free-icons/UserIcon";
 import Wallet01Icon from "@hugeicons/core-free-icons/Wallet01Icon";
 
+type Props = { name: IconName; size?: number };
+
 export type IconName =
   | "home"
   | "wallet"
@@ -36,7 +38,7 @@ const icons = {
   check: Tick01Icon,
   group: UserGroupIcon,
 };
-export function Icon({ name, size = 22 }: { name: IconName; size?: number }) {
+export function Icon({ name, size = 22 }: Props) {
   return (
     <HugeiconsIcon
       icon={icons[name]}

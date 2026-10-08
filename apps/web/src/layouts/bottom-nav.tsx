@@ -1,9 +1,11 @@
 import { NavLink } from "react-router-dom";
 import { Icon, type IconName } from "@/components/ui/icon";
 
+type Props = { active: NavigationKey };
+
 export type NavigationKey = "home" | "records" | "invoices" | "mypage";
 
-export function BottomNav({ active }: { active: NavigationKey }) {
+export function BottomNav({ active }: Props) {
   const links: [string, string, IconName, NavigationKey][] = [
     ["/home", "ホーム", "home", "home"],
     ["/records", "レコード", "wallet", "records"],

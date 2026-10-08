@@ -1,14 +1,12 @@
 import { Card } from "@/components/ui/card";
 
-export function StatusCard({
-  loading = false,
-  message,
-  onRetry,
-}: {
+type Props = {
   loading?: boolean;
   message: string;
   onRetry?: () => void;
-}) {
+};
+
+export function StatusCard({ loading = false, message, onRetry }: Props) {
   return (
     <Card className="p-4">
       <p aria-busy={loading || undefined} className="text-sm" role="status">
