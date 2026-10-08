@@ -1,146 +1,24 @@
 import { StatusCard } from "@/pages/allocation/status-card";
-import { useState } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { withdrawalQueries } from "@/features/withdrawal/queries";
-import { walletQueries } from "@/features/wallet/queries";
-import { groupQueries } from "@/features/group/queries";
-import { useCreateWithdrawalClaims } from "@/features/allocation/mutations";
 import { QueryErrorNotice } from "@/components/ui/query-error-notice";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import { Link, useParams } from "react-router-dom";
 import { Screen } from "@/layouts/screen";
-import { Avatar } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Card } from "@/components/ui/card";
 import { Icon } from "@/components/ui/icon";
 import { useGroupContext } from "@/features/group/use-group-context";
-import {
-  buildAllocations,
-  buildEqualAllocations,
-  buildFullAmountAllocations,
-  isAllocationAmountInput,
-  parseAllocationAmount,
-  summarizeAllocations,
-  type AllocationView,
-} from "@/features/allocation/domain";
-
-type AllocationOverride = {
-  allocations: AllocationView[];
-  selectedPreset: string | null;
-  withdrawalId: string;
-};
+import { useAllocationData } from "@/features/allocation/use-allocation-data";
+import { AllocationForm } from "@/features/allocation/allocation-form";
 
 export function AllocationPage() {
   const { withdrawalId } = useParams();
-  const navigate = useNavigate();
-  const client = useQueryClient();
   const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();
-  const withdrawalQuery = useQuery(
-    withdrawalQueries.detail(currentGroup?.id, withdrawalId, client),
-  );
-  const membersQuery = useQuery(groupQueries.members(currentGroup?.id));
-  const walletsQuery = useQuery(walletQueries.list(currentGroup?.id));
-  const withdrawal = withdrawalQuery.data;
-  const members = membersQuery.data ?? [];
-  const wallets = walletsQuery.data ?? [];
-  const isDataLoading =
-    Boolean(currentGroup) &&
-    (withdrawalQuery.isPending ||
-      membersQuery.isPending ||
-      walletsQuery.isPending);
-  const loadError =
-    withdrawalQuery.error?.message ??
-    membersQuery.error?.message ??
-    walletsQuery.error?.message ??
-    null;
-  const hasData =
-    withdrawalQuery.data !== undefined &&
-    membersQuery.data !== undefined &&
-    walletsQuery.data !== undefined;
-  const refreshPageData = async () => {
-    await Promise.all([
-      withdrawalQuery.refetch(),
-      membersQuery.refetch(),
-      walletsQuery.refetch(),
-    ]);
-  };
-  const createMutation = useCreateWithdrawalClaims();
-  const isCreatingClaims = createMutation.isPending;
-  const claimCreateError = createMutation.error?.message ?? null;
-  const [allocationOverride, setAllocationOverride] =
-    useState<AllocationOverride | null>(null);
-
-  const wallet = withdrawal
-    ? (wallets.find((item) => item.id === withdrawal.walletId) ?? null)
-    : null;
-  const currentAllocationOverride =
-    allocationOverride?.withdrawalId === withdrawal?.id
-      ? allocationOverride
-      : null;
-  const allocations =
-    currentAllocationOverride?.allocations ??
-    (withdrawal ? buildAllocations(withdrawal, members) : []);
-  const selectedPreset =
-    currentAllocationOverride?.selectedPreset ??
-    (currentAllocationOverride
-      ? null
-      : withdrawal?.status === "unallocated"
-        ? "equal"
-        : null);
-  const withdrawalAmount = withdrawal ? BigInt(withdrawal.amount) : 0n;
   const {
-    hasValidAllocationAmounts,
-    allocationTotal,
-    remainingAmount,
-    claimTargets,
-    canCreateClaims,
-  } = summarizeAllocations(withdrawalAmount, allocations, wallet);
-  const createClaims = () => {
-    if (!currentGroup || !withdrawalId || isCreatingClaims || !canCreateClaims)
-      return;
-    createMutation.mutate(
-      {
-        groupId: currentGroup.id,
-        withdrawalId,
-        allocations: allocations.map(({ member, amount }) => ({
-          memberId: member.id,
-          amount,
-        })),
-      },
-      { onSuccess: () => navigate("/invoices") },
-    );
-  };
-
-  const applyEqualPreset = () => {
-    if (!withdrawal) return;
-    setAllocationOverride({
-      allocations: buildEqualAllocations(withdrawal, members),
-      selectedPreset: "equal",
-      withdrawalId: withdrawal.id,
-    });
-  };
-
-  const applyFullAmountPreset = (memberId: string) => {
-    if (!withdrawal) return;
-    setAllocationOverride({
-      allocations: buildFullAmountAllocations(withdrawal, members, memberId),
-      selectedPreset: memberId,
-      withdrawalId: withdrawal.id,
-    });
-  };
-
-  const updateAllocationAmount = (memberId: string, amount: string) => {
-    if (!withdrawal || !isAllocationAmountInput(amount)) return;
-    setAllocationOverride({
-      allocations: allocations.map((allocation) =>
-        allocation.member.id === memberId
-          ? { ...allocation, amount }
-          : allocation,
-      ),
-      selectedPreset: null,
-      withdrawalId: withdrawal.id,
-    });
-  };
-
+    withdrawal,
+    members,
+    wallet,
+    isDataLoading,
+    loadError,
+    hasData,
+    refreshPageData,
+  } = useAllocationData(currentGroup?.id, withdrawalId);
   return (
     <Screen className="pb-0">
       <header className="mb-8">
@@ -184,156 +62,15 @@ export function AllocationPage() {
       ) : members.length === 0 ? (
         <StatusCard message="負担を割り当てられるメンバーがいません。" />
       ) : (
-        <article>
-          <Card className="mb-4 grid grid-cols-[1fr_auto_1fr] items-center p-5">
-            <div>
-              <p className="mb-2 text-xs font-medium text-neutral-500">
-                出金額
-              </p>
-              <strong className="text-2xl tracking-[-0.03em]">
-                {formatYen(withdrawalAmount)}
-              </strong>
-            </div>
-            <span className="mx-5 h-16 w-px bg-black" aria-hidden="true" />
-            <div>
-              <p className="mb-2 text-xs font-medium text-neutral-500">
-                支払い元
-              </p>
-              <Badge>{wallet.name}</Badge>
-            </div>
-          </Card>
-          <Card className="mb-4 p-4">
-            <div className="flex items-end justify-between gap-4">
-              <div>
-                <p className="mb-1 text-xs font-bold">負担額の合計</p>
-                <strong className="text-xl">
-                  {hasValidAllocationAmounts
-                    ? formatYen(allocationTotal)
-                    : "入力してください"}
-                </strong>
-              </div>
-              <p className="text-sm font-bold">
-                残り&nbsp;{" "}
-                {hasValidAllocationAmounts ? formatYen(remainingAmount) : "—"}
-              </p>
-            </div>
-          </Card>
-          <div
-            aria-label="負担配分プリセット"
-            className="mb-4 flex gap-2 overflow-x-auto pb-1"
-          >
-            <button
-              aria-pressed={selectedPreset === "equal"}
-              className="h-11 shrink-0 border border-accent bg-white px-4 text-xs font-bold text-accent"
-              onClick={applyEqualPreset}
-              type="button"
-            >
-              ＝ 均等にする
-            </button>
-            {members.map((member) => (
-              <button
-                aria-pressed={selectedPreset === member.id}
-                className="h-11 shrink-0 border border-black bg-white px-4 text-xs font-bold text-black"
-                key={member.id}
-                onClick={() => applyFullAmountPreset(member.id)}
-                type="button"
-              >
-                {member.name}が全額
-              </button>
-            ))}
-          </div>
-          <Card>
-            {allocations.map(({ member, amount }, index) => (
-              <div
-                className={`flex min-h-20 items-center gap-3 p-4 ${index < allocations.length - 1 ? "border-b border-black" : ""}`}
-                key={member.id}
-              >
-                <Avatar name={member.name} />
-                <div className="min-w-0 flex-1">
-                  <b className="block truncate text-sm">{member.name}</b>
-                  {member.id === currentGroup.memberId && (
-                    <small className="block text-xs text-neutral-600">
-                      あなた
-                    </small>
-                  )}
-                </div>
-                <label className="flex min-w-32 items-center gap-2 border border-black px-4 py-3 text-sm">
-                  <span>¥</span>
-                  <input
-                    aria-label={`${member.name}の負担額`}
-                    className="min-w-0 flex-1 bg-transparent text-right font-bold outline-none"
-                    inputMode="numeric"
-                    min="0"
-                    onChange={(event) =>
-                      updateAllocationAmount(member.id, event.target.value)
-                    }
-                    pattern="[0-9]*"
-                    type="text"
-                    value={amount}
-                  />
-                </label>
-              </div>
-            ))}
-          </Card>
-          <Card className="mt-5 p-4">
-            <h2 className="mb-4 text-sm font-bold">発行される請求</h2>
-            {claimTargets.length > 0 ? (
-              <div className="space-y-4">
-                {claimTargets.map(({ member, amount }) => (
-                  <div className="flex items-center gap-3" key={member.id}>
-                    <Avatar name={member.name} />
-                    <div className="min-w-0 flex-1">
-                      <b className="block text-sm">
-                        {member.name}に{" "}
-                        {formatYen(parseAllocationAmount(amount)!)} を請求
-                      </b>
-                      <small className="block truncate text-xs text-neutral-600">
-                        {wallet.name}への返済
-                      </small>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <p className="text-sm text-neutral-600">
-                この配分から発行される請求はありません。
-              </p>
-            )}
-          </Card>
-          {claimCreateError && (
-            <p className="mt-5 text-sm text-red-600" role="alert">
-              {claimCreateError}
-            </p>
-          )}
-          <button
-            aria-describedby="claim-issue-note"
-            className="mt-5 h-14 w-full bg-black text-base font-bold text-white"
-            disabled={isCreatingClaims || !canCreateClaims}
-            onClick={() => void createClaims()}
-            type="button"
-          >
-            {isCreatingClaims ? "請求を発行中…" : "請求を発行する"}
-          </button>
-          <p
-            className="mt-4 flex items-start gap-2 text-xs leading-6 text-neutral-600"
-            id="claim-issue-note"
-          >
-            <span
-              aria-hidden="true"
-              className="mt-1 grid size-4 shrink-0 place-items-center rounded-full border border-accent text-[10px] font-bold text-accent"
-            >
-              i
-            </span>
-            <span>
-              発行すると、表示中の負担配分を保存して対象メンバーへの請求として記録します。
-            </span>
-          </p>
-        </article>
+        <AllocationForm
+          key={`${currentGroup.id}:${withdrawal.id}`}
+          withdrawal={withdrawal}
+          members={members}
+          wallet={wallet}
+          groupId={currentGroup.id}
+          currentMemberId={currentGroup.memberId}
+        />
       )}
     </Screen>
   );
 }
-
-const formatYen = (amount: bigint) => {
-  return `¥${amount.toLocaleString("ja-JP")}`;
-};
