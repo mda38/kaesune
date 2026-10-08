@@ -15,3 +15,26 @@
     font: inherit;
   }
 }
+
+/* outline を消す utility があっても、キーボードフォーカスを表示する。
+ * 日付のカレンダーボタンは UA shadow 内へ focus が移るため focus-within も使う。 */
+:is(
+  a[href],
+  button,
+  input,
+  select,
+  textarea,
+  summary,
+  [tabindex],
+  [contenteditable="true"]
+):focus-visible,
+input[type="date"]:focus-within {
+  outline: 3px solid #2563eb;
+  outline-offset: 3px;
+}
+
+/* Card の overflow で表示が欠けないよう、フォーム要素では内側に描画する。 */
+:is(input, select, textarea):focus-visible,
+input[type="date"]:focus-within {
+  outline-offset: -3px;
+}
