@@ -3,12 +3,12 @@ import {
   useUpdateClaimStatus,
 } from "../../features/claim/mutations";
 import { useQuery } from "@tanstack/react-query";
-import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { QueryErrorNotice } from "../../components/ui/query-error-notice";
 import { claimQueries } from "../../features/claim/queries";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BottomNav } from "../../layouts";
 import { Badge, Card, Icon } from "../../components/ui";
-import { useGroupContext } from "../../features/group/useGroupContext";
+import { useGroupContext } from "../../features/group/use-group-context";
 
 export function InvoiceDetailPage() {
   const { claimId } = useParams();

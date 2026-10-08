@@ -3,7 +3,7 @@ import { createGroupWithdrawal, deleteGroupWithdrawal } from "./api";
 import type { CreateWithdrawalInput } from "./types";
 import { withdrawalQueries } from "./queries";
 
-export function useCreateWithdrawal() {
+export const useCreateWithdrawal = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -18,9 +18,9 @@ export function useCreateWithdrawal() {
         queryKey: withdrawalQueries.list(groupId).queryKey,
       }),
   });
-}
+};
 
-export function useDeleteWithdrawal() {
+export const useDeleteWithdrawal = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -35,4 +35,4 @@ export function useDeleteWithdrawal() {
         queryKey: withdrawalQueries.list(groupId).queryKey,
       }),
   });
-}
+};

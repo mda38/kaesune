@@ -13,11 +13,11 @@ export class ApiRequestError extends Error {
   }
 }
 
-async function request<T>(
+const request = async <T>(
   path: string,
   options: RequestInit = {},
   errorMessage: string,
-): Promise<T> {
+): Promise<T> => {
   const response = await fetch(`${apiOrigin}${path}`, {
     credentials: "include",
     ...options,
@@ -31,13 +31,13 @@ async function request<T>(
   }
 
   return response.json() as Promise<T>;
-}
+};
 
-export function get<T>(path: string, signal?: AbortSignal) {
+export const get = <T>(path: string, signal?: AbortSignal) => {
   return request<T>(path, { signal }, "データの取得に失敗しました。");
-}
+};
 
-export function post<T>(path: string, body: unknown) {
+export const post = <T>(path: string, body: unknown) => {
   return request<T>(
     path,
     {
@@ -47,9 +47,9 @@ export function post<T>(path: string, body: unknown) {
     },
     "データの作成に失敗しました。",
   );
-}
+};
 
-export function put<T>(path: string, body: unknown) {
+export const put = <T>(path: string, body: unknown) => {
   return request<T>(
     path,
     {
@@ -59,9 +59,9 @@ export function put<T>(path: string, body: unknown) {
     },
     "データの更新に失敗しました。",
   );
-}
+};
 
-export function patch<T>(path: string, body: unknown) {
+export const patch = <T>(path: string, body: unknown) => {
   return request<T>(
     path,
     {
@@ -71,9 +71,9 @@ export function patch<T>(path: string, body: unknown) {
     },
     "データの更新に失敗しました。",
   );
-}
+};
 
-export async function del(path: string): Promise<void> {
+export const del = async (path: string): Promise<void> => {
   const response = await fetch(`${apiOrigin}${path}`, {
     method: "DELETE",
     credentials: "include",
@@ -88,4 +88,4 @@ export async function del(path: string): Promise<void> {
       body?.message ?? "データの削除に失敗しました。",
     );
   }
-}
+};

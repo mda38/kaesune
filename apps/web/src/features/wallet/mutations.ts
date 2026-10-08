@@ -3,7 +3,7 @@ import { createGroupWallet, deleteGroupWallet } from "./api";
 import type { CreateWalletInput } from "./types";
 import { walletQueries } from "./queries";
 
-export function useCreateWallet() {
+export const useCreateWallet = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -18,9 +18,9 @@ export function useCreateWallet() {
         queryKey: walletQueries.list(groupId).queryKey,
       }),
   });
-}
+};
 
-export function useDeleteWallet() {
+export const useDeleteWallet = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -35,4 +35,4 @@ export function useDeleteWallet() {
         queryKey: walletQueries.list(groupId).queryKey,
       }),
   });
-}
+};

@@ -6,23 +6,23 @@ export type { Withdrawal } from "../withdrawal/types";
 
 export type AllocationInput = { memberId: string; amount: string };
 
-export function replaceGroupWithdrawalAllocations(
+export const replaceGroupWithdrawalAllocations = (
   groupId: string,
   withdrawalId: string,
   allocations: AllocationInput[],
-) {
+) => {
   return put<Withdrawal>(
     `/api/groups/${groupId}/withdrawals/${withdrawalId}/allocations`,
     { allocations },
   );
-}
+};
 
-export function createGroupWithdrawalClaims(
+export const createGroupWithdrawalClaims = (
   groupId: string,
   withdrawalId: string,
-) {
+) => {
   return post<{ claims: Claim[] }>(
     `/api/groups/${groupId}/withdrawals/${withdrawalId}/claims`,
     {},
   );
-}
+};

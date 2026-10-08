@@ -1,11 +1,11 @@
 import { walletQueries } from "../../features/wallet/queries";
 import { useQuery } from "@tanstack/react-query";
-import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { QueryErrorNotice } from "../../components/ui/query-error-notice";
 import { withdrawalQueries } from "../../features/withdrawal/queries";
-import { WithdrawalList } from "../../features/withdrawal/components/WithdrawalList";
+import { WithdrawalList } from "../../features/withdrawal/components/withdrawal-list";
 import { BottomNav } from "../../layouts";
 import { Card } from "../../components/ui";
-import { useGroupContext } from "../../features/group/useGroupContext";
+import { useGroupContext } from "../../features/group/use-group-context";
 
 export function RecordsPage() {
   const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();

@@ -6,11 +6,11 @@ import {
   useCreateWallet,
   useDeleteWallet,
 } from "../../features/wallet/mutations";
-import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { QueryErrorNotice } from "../../components/ui/query-error-notice";
 import type { Wallet } from "../../features/wallet/types";
 import { Heading, Screen } from "../../layouts";
 import { Badge, Card, Icon } from "../../components/ui";
-import { useGroupContext } from "../../features/group/useGroupContext";
+import { useGroupContext } from "../../features/group/use-group-context";
 
 export function WalletsPage() {
   const { currentGroup, errorMessage, isLoading, refresh } = useGroupContext();

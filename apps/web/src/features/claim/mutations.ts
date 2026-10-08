@@ -6,7 +6,7 @@ import { withdrawalQueries } from "../withdrawal/queries";
 
 type ClaimTarget = { groupId: string; claimId: string };
 
-export function useUpdateClaimStatus() {
+export const useUpdateClaimStatus = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -26,9 +26,9 @@ export function useUpdateClaimStatus() {
       ]);
     },
   });
-}
+};
 
-export function useDeleteClaim() {
+export const useDeleteClaim = () => {
   const client = useQueryClient();
   return useMutation({
     mutationFn: ({ groupId, claimId }: ClaimTarget) =>
@@ -44,4 +44,4 @@ export function useDeleteClaim() {
       ]);
     },
   });
-}
+};

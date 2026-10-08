@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { QueryErrorNotice } from "../../components/ui/query-error-notice";
 import { claimQueries } from "../../features/claim/queries";
 import { Link } from "react-router-dom";
 import type { ClaimListItem } from "../../features/claim/types";
 import { Heading, Screen } from "../../layouts";
 import { Badge, Card, Icon } from "../../components/ui";
-import { useGroupContext } from "../../features/group/useGroupContext";
+import { useGroupContext } from "../../features/group/use-group-context";
 
 type ClaimFilter = "all" | ClaimListItem["status"];
 

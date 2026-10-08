@@ -1,9 +1,9 @@
-import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { QueryErrorNotice } from "../../components/ui/query-error-notice";
 import { Link, useNavigate } from "react-router-dom";
 import { authClient } from "../../features/auth/auth-client";
 import { Heading, Screen } from "../../layouts";
 import { Avatar, Card, Icon } from "../../components/ui";
-import { useGroupContext } from "../../features/group/useGroupContext";
+import { useGroupContext } from "../../features/group/use-group-context";
 
 export function MypagePage() {
   const navigate = useNavigate();

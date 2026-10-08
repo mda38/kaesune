@@ -2,14 +2,14 @@ import { useState } from "react";
 import { walletQueries } from "../../features/wallet/queries";
 import { useDeleteWithdrawal } from "../../features/withdrawal/mutations";
 import { useQuery } from "@tanstack/react-query";
-import { QueryErrorNotice } from "../../components/ui/QueryErrorNotice";
+import { QueryErrorNotice } from "../../components/ui/query-error-notice";
 import { withdrawalQueries } from "../../features/withdrawal/queries";
 import Delete01Icon from "@hugeicons/core-free-icons/Delete01Icon";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { BottomNav } from "../../layouts";
 import { Card } from "../../components/ui";
-import { useGroupContext } from "../../features/group/useGroupContext";
+import { useGroupContext } from "../../features/group/use-group-context";
 
 export function RecordDetailPage() {
   const { withdrawalId } = useParams();
