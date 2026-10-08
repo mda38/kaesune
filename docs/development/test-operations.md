@@ -13,6 +13,8 @@
 - 重要な画面フローは、必要に応じて Playwright の固定 verification scenario として追加する
 - Browser verification はローカル環境の再現可能な fixture を使い、まず `pnpm verify:<feature>` として実行する
 - Browser verification は現時点では CI に載せず、ローカルで安定して再現できることを優先する
+- `verification/` の feature spec は出金登録・出金削除・請求発行・財布削除を実 Backend と検証専用開発 DB で確認する。実行条件・fixture 復元・失敗時の trace / screenshot は [ローカル検証手順](local-verification.md) を参照する
+- API mock の `server-state.spec.ts` は `playwright.query.config.ts` で分離し、実 Backend を使う feature spec とは混在させない
 
 ## ローカル運用
 

@@ -36,12 +36,26 @@
 - `format` はリポジトリ全体に対して実行できる
 - `lint-staged` はステージされたファイルだけを対象にする
 - Browser verification を初めて実行する前に `pnpm verify:install-browser` で Chromium を導入する
+- feature 別 verification は実 Backend と Neon 開発 DB を使う。最初に [環境変数の設定](environment-variables.md) に従って `apps/backend/.dev.vars` と `apps/web/.env` を用意し、検証専用の開発 DB に `pnpm --filter backend db:migrate` を実行する。`.dev.vars` の `ENVIRONMENT=development`、`BETTER_AUTH_URL=http://localhost:8787`、`WEB_ORIGIN=http://localhost:5173` と、Web の `VITE_API_ORIGIN=http://localhost:8787` を確認する
+- 各 feature コマンドは seed を実行してから Backend（8787）と Web（5173）を起動する。起動済みサーバーを再利用する場合は、同じ設定・コード・DB を使うこと。fixture のユーザー・グループを共有するため、feature コマンドは並列で実行せず、必ず各 `pnpm verify:*` コマンドで seed から順番に実行する。`playwright test` 単体では fixture は復元されない
+- 4つの feature の API 認証と seed は `.dev.vars` の同じ `VERIFY_USER_EMAIL` / `VERIFY_USER_PASSWORD` を使う。認証画面の操作はシナリオの対象に含めない
 - `pnpm verify:claim-create` は、検証専用の未配分出金を請求発行画面から操作し、配分保存と請求作成後に請求一覧へ遷移して、対象者・用途・返済先・金額・未精算状態を確認する。`verification-artifacts/claim-create-before.png` と `verification-artifacts/claim-create-after.png` を保存する
 - `pnpm verify:payment-create` は、検証専用のユーザー・グループ・財布を投入し、ログイン画面を操作せずに API で認証済み session を確立して出金作成を確認する。金額欄の初期フォーカス、当日日付、保存後の記録一覧を検証し、`verification-artifacts/payment-create-form.png` と `verification-artifacts/payment-create-after.png` を保存する
 - `pnpm verify:records-delete` は、検証専用 fixture を投入して実画面の出金削除を確認し、`verification-artifacts/records-delete-after.png` を保存する
 - `pnpm verify:wallet-delete` は、検証専用 fixture を投入して未参照財布の削除と参照中財布の削除拒否を実画面で確認し、`verification-artifacts/wallet-delete-after.png` を保存する
 - テスト運用の詳細は [テスト運用](test-operations.md) を参照する
 - `pnpm build` で Next の開発キャッシュ由来の型エラーが出る場合は、`apps/web/.next` を消してから再実行する
+
+### Browser verification の結果確認
+
+成功時の画面は上記の `verification-artifacts/` と HTML report の添付から確認できる。失敗時は `test-results/playwright/` に screenshot と trace を保存する。
+
+```sh
+pnpm exec playwright show-report
+pnpm exec playwright show-trace test-results/playwright/<test-directory>/trace.zip
+```
+
+trace では操作、DOM、通信結果を確認する。report と artifact は Git 管理外で、ローカルの検証結果として扱う。
 
 ## Server State の検証
 

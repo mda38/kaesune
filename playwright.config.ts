@@ -7,17 +7,28 @@ process.env.VERIFY_USER_PASSWORD ??= "verify-records-delete-password";
 
 export default defineConfig({
   testDir: "./verification",
+  testMatch: [
+    "claim-create.spec.ts",
+    "records-delete.spec.ts",
+    "payment-create.spec.ts",
+    "wallet-delete.spec.ts",
+  ],
   outputDir: "test-results/playwright",
+  reporter: [["list"], ["html", { open: "never" }]],
+  workers: 1,
   timeout: 60_000,
   use: {
     baseURL: "http://localhost:5173",
     trace: "retain-on-failure",
-    viewport: { width: 393, height: 852 },
+    screenshot: "only-on-failure",
   },
   projects: [
     {
       name: "chromium",
-      use: { ...devices["Desktop Chrome"] },
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 393, height: 852 },
+      },
     },
   ],
   webServer: [
