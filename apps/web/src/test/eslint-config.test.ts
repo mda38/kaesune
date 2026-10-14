@@ -210,3 +210,99 @@ describe("Props の規約", () => {
     ).toBe(invalid);
   });
 });
+
+describe("アーキテクチャの依存方向", () => {
+  it.each([
+    ["components/ui/card.tsx", "@/features/wallet/types/wallet", true],
+    ["lib/api-client.ts", "@/app/router", true],
+    [
+      "features/wallet/queries/use-wallets-query.ts",
+      "@/app/routes/app/wallets",
+      true,
+    ],
+    [
+      "features/wallet/queries/use-wallets-query.ts",
+      "@/features/withdrawal/queries/query-options",
+      true,
+    ],
+    [
+      "features/claim/queries/use-delete-claim-mutation.ts",
+      "@/features/withdrawal/queries/query-options",
+      false,
+    ],
+    [
+      "features/claim/queries/use-delete-claim-mutation.ts",
+      "@/features/withdrawal/components/withdrawal-dialog",
+      true,
+    ],
+    [
+      "features/allocation/utils/allocations.ts",
+      "@/features/group/types/group",
+      false,
+    ],
+    [
+      "features/allocation/utils/allocations.ts",
+      "@/features/withdrawal/queries/query-options",
+      true,
+    ],
+    [
+      "features/withdrawal/components/withdrawal-form.tsx",
+      "@/features/wallet/types/wallet",
+      false,
+    ],
+    [
+      "features/wallet/api/get-group-wallets.ts",
+      "@/features/wallet/queries/query-options",
+      true,
+    ],
+    [
+      "app/routes/app/home.tsx",
+      "@/features/claim/queries/use-claims-query",
+      false,
+    ],
+    ["features/withdrawal/queries/query-options.ts", "@/lib/api-client", false],
+    ["components/ui/card.tsx", "@/lib/api-client", false],
+    [
+      "features/claim/queries/use-delete-claim-mutation.ts",
+      "@/features/withdrawal/queries/../components/withdrawal-dialog",
+      true,
+    ],
+  ])("%s → %s の依存を検査する", async (file, target, invalid) => {
+    for (const code of [
+      `import { value } from "${target}";`,
+      `export { value } from "${target}";`,
+      `export * from "${target}";`,
+      `const load = () => import("${target}");`,
+    ]) {
+      const messages = await messagesFor(code, `src/${file}`);
+      expect(
+        messages.some((message) => message.ruleId === "local/architecture"),
+      ).toBe(invalid);
+    }
+  });
+});
+
+describe("ドメインと責務によるファイル配置", () => {
+  it.each([
+    ["pages/home.tsx", true],
+    ["routes/router.tsx", true],
+    ["layouts/screen.tsx", true],
+    ["features/wallet/api.ts", true],
+    ["features/wallet/pages/wallets.tsx", true],
+    ["features/wallet/mutations/use-create-wallet.ts", true],
+    ["features/wallet/queries/create-wallet.ts", true],
+    ["features/unknown/api/get-unknown.ts", true],
+    ["features/wallet/api/get-group-wallets.ts", false],
+    ["features/wallet/queries/query-options.ts", false],
+    ["features/wallet/queries/use-wallets-query.ts", false],
+    ["features/wallet/queries/use-create-wallet-mutation.test.ts", false],
+    ["features/allocation/utils/allocations.ts", false],
+    ["app/routes/app/wallets.tsx", false],
+    ["components/layouts/screen.tsx", false],
+  ])("%s の配置を検査する", async (file, invalid) => {
+    const messages = await messagesFor("export {};", `src/${file}`);
+    expect(
+      messages.some((message) => message.ruleId === "local/architecture"),
+    ).toBe(invalid);
+  });
+});

@@ -2,20 +2,23 @@
 
 フロントエンドの Server State は TanStack Query v5 に集約する。対象は現在のユーザー・所属グループ、メンバー、財布、出金、請求。
 
+配置と依存方向は [フロントエンドの構成](frontend.md) を参照する。
+
 ## 責務と配置
 
-| 配置                                             | 責務                                                                     |
-| ------------------------------------------------ | ------------------------------------------------------------------------ |
-| `lib/api-client.ts`                              | Cookie を含む HTTP 通信、`ApiRequestError`、`AbortSignal` の受け渡し     |
-| `lib/query-client.ts`                            | QueryClient の作成、retry・refetch・キャッシュ保持期間、401 の共通通知   |
-| `features/*/api.ts`                              | React に依存しない API 関数、レスポンスの取り出し                        |
-| `features/*/queries.ts`                          | リソースを所有する feature ごとの query key と `queryOptions`            |
-| `features/*/mutations.ts`                        | 更新用 hook と、関連 Query の invalidation                               |
-| `features/auth/authenticated-query-provider.tsx` | 認証中の QueryClient の寿命、401 後のログインへの遷移                    |
-| `features/group/group-provider.tsx`              | `/api/me` の Query から現在のユーザー・グループを Context で提供         |
-| Page・Component                                  | Query 結果の表示、入力検証、ローカル入力状態、確認操作、成功後の画面遷移 |
+| 配置                                                        | 責務                                                                     |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------ |
+| `lib/api-client.ts`                                         | Cookie を含む HTTP 通信、`ApiRequestError`、`AbortSignal` の受け渡し     |
+| `lib/query-client.ts`                                       | QueryClient の作成、retry・refetch・キャッシュ保持期間、401 の共通通知   |
+| `features/*/api/*.ts`                                       | React に依存しない API 関数、レスポンスの取り出し                        |
+| `features/*/queries/query-options.ts`                       | リソースを所有する feature ごとの query key と `queryOptions`            |
+| `features/*/queries/use-*-mutation.ts`                      | 更新用 hook と、関連 Query の invalidation                               |
+| `features/auth/components/authenticated-query-provider.tsx` | 認証中の QueryClient の寿命、401 後のログインへの遷移                    |
+| `features/group/components/group-provider.tsx`              | `/api/me` の Query から現在のユーザー・グループを Context で提供         |
+| `features/*/queries/use-*-query.ts`                         | Query Options を使う取得 hook、詳細の QueryClient 受け渡し               |
+| Page・Component                                             | Query 結果の表示、入力検証、ローカル入力状態、確認操作、成功後の画面遷移 |
 
-取得結果は Query キャッシュを正本とし、Context・Zustand・Page の state にコピーしない。入力途中の値、フィルター、メニュー開閉、編集中の配分は React のローカル state に置く。汎用 resource hook や repository 層は設けず、取得は `useQuery(featureQueries.list(groupId))`、更新は feature の専用 Mutation hook を利用する。
+取得結果は Query キャッシュを正本とし、Context・Zustand・Page の state にコピーしない。入力途中の値、フィルター、メニュー開閉、編集中の配分は React のローカル state に置く。汎用 resource hook や repository 層は設けず、取得は `useWalletsQuery(groupId)` など feature の専用 Query hook、更新は feature の専用 Mutation hook を利用する。
 
 ## Query key と所有者
 
@@ -27,9 +30,11 @@
 | withdrawal       | `["groups", groupId, "withdrawals"]` |
 | claim            | `["groups", groupId, "claims"]`      |
 
+詳細 key は withdrawal が `["groups", groupId, "withdrawals", "detail", withdrawalId]`、claim が `["groups", groupId, "claims", "detail", claimId]`。一覧 key を prefix とする無効化は詳細にも届く。削除時は対象の詳細キャッシュを null にしてから無効化する。
+
 画面名を key に含めない。同じリソースを使う画面は同じ Query を共有する。サーバーへ渡す絞り込み等を追加した場合は、取得条件も key に含める。グループ未確定時は `skipToken` で通信を行わない。
 
-出金詳細・請求詳細・配分画面は、既存と同じく一覧 API を利用し、`select` で対象 ID を取り出す。一覧取得の件数制限も既存のままであり、将来の詳細 API 移行やページネーションは別途扱う。表示用の集計や UI フィルターは取得結果から導出する。
+出金詳細・請求詳細・配分画面は詳細 API を利用する。詳細 Query は一覧キャッシュに対象がある場合、初期値と更新時刻を再利用する。無効化済み一覧は初期値に使わず、404 は null として扱う。一覧取得の件数制限やページネーションは別途扱う。表示用の集計や UI フィルターは取得結果から導出する。
 
 ## 共通の取得方針
 

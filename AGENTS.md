@@ -18,6 +18,10 @@
 - 仕様書・設計資料・開発ルールは `docs/` にまとめ、GitHub またはエディタで確認する。
 - 環境変数を追加・変更・削除するときは、同じ変更で [環境変数の設定](docs/development/environment-variables.md)、対応する `*.example`、アプリごとの README を更新する。
 
+## フロントエンドの配置
+
+- `apps/web` の新規実装・移動・レビューでは [フロントエンド設計](docs/architecture/frontend.md) と [frontend-architecture Skill](.agents/skills/frontend-architecture/SKILL.md) に従う。
+
 ## 文書言語
 
 - 新規・更新する仕様書、設計資料、開発ルール、README、Plan、GitHub Issue、Pull Request 本文は、原則として日本語で記載する。

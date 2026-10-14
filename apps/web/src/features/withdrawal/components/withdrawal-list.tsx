@@ -1,4 +1,4 @@
-import type { Withdrawal } from "@/features/withdrawal/types";
+import type { Withdrawal } from "@/features/withdrawal/types/withdrawal";
 import { Link } from "react-router-dom";
 
 type Props = {
