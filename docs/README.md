@@ -32,6 +32,8 @@
 - [ローカル検証手順](development/local-verification.md)
 - [Planning Workflow](development/planning-workflow.md)
 - [テスト運用](development/test-operations.md)
+- [フロントエンド構成移行の実行順と検証結果](development/frontend-refactor.md)
+- [フロントエンドのテスト戦略](testing/frontend.md)
 
 ## 編集ルール
 

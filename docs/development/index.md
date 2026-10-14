@@ -12,5 +12,7 @@
 - [ローカル検証手順](local-verification.md)
 - [CI 品質ゲート](ci-quality-gate.md)
 - [テスト運用](test-operations.md)
+- [フロントエンド構成移行の実行順と検証結果](frontend-refactor.md)
+- [フロントエンドのテスト戦略](../testing/frontend.md)
 
 - [環境変数の設定](environment-variables.md)

@@ -2,6 +2,8 @@
 
 テストを追加・実行する基準
 
+Unit／Component／E2E の責務、主要機能のマトリクス、mock・Provider・fixture の隔離と CI への割り当ては [フロントエンドのテスト戦略](../testing/frontend.md) を参照する。移行単位ごとの実行結果と残課題は [構成移行の検証記録](frontend-refactor.md) を参照する。
+
 ## 目的
 
 変更内容に応じて、どの種類のテストをいつ実行するかを明確にする。
