@@ -289,6 +289,103 @@ test("財布の追加・削除を出金フォームでも反映する", async ({
   ).toHaveCount(0);
 });
 
+test("財布作成は空白名と所有者未選択を検証し、個人財布の作成成功後に入力を戻す", async ({
+  page,
+}) => {
+  const state = await mockApi(page);
+  await page.goto("/wallets");
+  const submit = page.getByRole("button", { name: "財布を追加", exact: true });
+  await page.getByLabel("財布名").fill("   ");
+  await submit.click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "財布名を入力してください。",
+  );
+  expect(state.calls.get("POST /api/groups/group-1/wallets")).toBeUndefined();
+
+  await page.getByLabel("財布名").fill("  個人の旅行財布  ");
+  await page.getByLabel("種類").selectOption("personal");
+  await submit.click();
+  await expect(page.getByRole("alert")).toHaveText(
+    "所有者を選択してください。",
+  );
+  expect(state.calls.get("POST /api/groups/group-1/wallets")).toBeUndefined();
+  await page.getByLabel("所有者").selectOption("member-1");
+  await submit.click();
+  await expect(page.getByText("個人の旅行財布", { exact: true })).toBeVisible();
+  expect(state.wallets[1]).toMatchObject({
+    name: "個人の旅行財布",
+    ownerType: "personal",
+    ownerMemberId: "member-1",
+  });
+  await expect(
+    page.getByText("検証ユーザーの個人財布", { exact: true }),
+  ).toBeVisible();
+  await expect(page.getByLabel("財布名")).toHaveValue("");
+  await expect(page.getByLabel("種類")).toHaveValue("shared");
+  await expect(page.getByLabel("所有者")).toHaveCount(0);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("財布作成に失敗しても入力を保持し、共有への切替後は個人の所有者を送信しない", async ({
+  page,
+}) => {
+  const state = await mockApi(page);
+  await page.goto("/wallets");
+  await page.getByLabel("財布名").fill("旅行財布");
+  await page.getByLabel("種類").selectOption("personal");
+  await page.getByLabel("所有者").selectOption("member-1");
+  state.mutationStatus = 503;
+  const submit = page.getByRole("button", { name: "財布を追加", exact: true });
+  await submit.click();
+  await expect(page.getByRole("alert")).toHaveText("更新エラー");
+  await expect(page.getByLabel("財布名")).toHaveValue("旅行財布");
+  await expect(page.getByLabel("所有者")).toHaveValue("member-1");
+  expect(state.calls.get("POST /api/groups/group-1/wallets")).toBe(1);
+  await page.getByLabel("種類").selectOption("shared");
+  await page.getByLabel("種類").selectOption("personal");
+  await expect(page.getByLabel("所有者")).toHaveValue("");
+  await page.getByLabel("種類").selectOption("shared");
+  state.mutationStatus = 200;
+  const request = page.waitForRequest(
+    (request) =>
+      request.method() === "POST" && request.url().endsWith("/wallets"),
+  );
+  await submit.click();
+  expect((await request).postDataJSON()).toEqual({
+    name: "旅行財布",
+    ownerType: "shared",
+  });
+  await expect(page.getByText("旅行財布", { exact: true })).toBeVisible();
+  await expect(page.getByRole("alert")).toHaveCount(0);
+});
+
+test("財布削除のキャンセルでは通信せず、削除失敗時は一覧を保持して再操作できる", async ({
+  page,
+}) => {
+  const state = await mockApi(page);
+  await page.goto("/wallets");
+  const remove = page.getByRole("button", { name: "共有財布を削除" });
+  page.once("dialog", (dialog) => dialog.dismiss());
+  await remove.click();
+  expect(
+    state.calls.get("DELETE /api/groups/group-1/wallets/wallet-1"),
+  ).toBeUndefined();
+  state.mutationStatus = 409;
+  page.once("dialog", (dialog) => dialog.accept());
+  await remove.click();
+  await expect(page.getByRole("alert")).toHaveText("更新エラー");
+  await expect(remove).toBeEnabled();
+  expect(state.wallets).toHaveLength(1);
+  state.mutationStatus = 200;
+  page.once("dialog", (dialog) => dialog.accept());
+  await remove.click();
+  await expect(remove).toHaveCount(0);
+  await expect(page.getByRole("alert")).toHaveCount(0);
+  expect(state.calls.get("DELETE /api/groups/group-1/wallets/wallet-1")).toBe(
+    2,
+  );
+});
+
 test("出金の作成・削除後に一覧キャッシュを更新する", async ({ page }) => {
   await mockApi(page);
   await page.goto("/records");
