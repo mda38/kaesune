@@ -87,3 +87,18 @@ Query hook は既存 Options を包み、詳細の QueryClient を渡す責務�
 - `features/wallet/queries/use-wallets-query.ts`
 - `features/withdrawal/queries/use-withdrawal-query.ts`
 - `features/withdrawal/queries/use-withdrawals-query.ts`
+
+## #179 の画面分離で追加したファイル
+
+#175 の移行先は維持し、[PR #179](https://github.com/mda38/kaesune/pull/179) で以下の8ファイルを追加した。`app/routes/app/records/allocation.tsx` と `app/routes/app/wallets.tsx` は引き続き画面入口を担当する。#175 の元69ファイルからの移行先と合わせて、develop `7f06637` の全99ファイルに対応する。
+
+- `features/allocation/components/allocation-form.tsx`
+- `features/allocation/components/allocation-summary.tsx`
+- `features/allocation/components/claim-preview.tsx`
+- `features/allocation/components/member-allocation-list.tsx`
+- `features/allocation/hooks/use-allocation-form.ts`
+- `features/allocation/utils/format-yen.ts`
+- `features/wallet/components/wallet-form.tsx`
+- `features/wallet/components/wallet-list.tsx`
+
+実行順・関連 Issue と PR・移行結果の照合は [構成移行の検証記録](../development/frontend-refactor.md) を参照する。

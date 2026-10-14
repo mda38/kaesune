@@ -10,7 +10,7 @@ Pull Request 時に、変更の影響を受ける範囲だけを効率よく検�
 
 - `format` はリポジトリ全体を対象に検証する
 - `lint` / `typecheck` / `build` は Turborepo の `--affected` を使って対象範囲を絞る
-- `test` は現時点ではテストスイート未整備のため、導入時に追加する
+- `test` は Web／Backend に実行基盤があるが、CI には未接続。Frontend は #138、Backend は #157 で追加する。Frontend の実行順・失敗条件は [テスト戦略](../testing/frontend.md) を参照する
 - テスト運用の詳細は [テスト運用](test-operations.md) を参照する
 
 ## 実行内容
