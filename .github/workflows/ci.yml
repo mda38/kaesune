@@ -45,5 +45,8 @@ jobs:
       - name: Check formatting
         run: pnpm format:check
 
+      - name: Run affected frontend tests
+        run: pnpm exec turbo run test --affected --filter=web --cache-dir=.turbo
+
       - name: Run affected lint, typecheck, and build
         run: pnpm exec turbo run lint typecheck build --affected --continue=always --cache-dir=.turbo

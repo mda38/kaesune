@@ -75,14 +75,14 @@ mock の型は所有 Feature から `import type` する。固定レスポンス
 
 ## 既存 Issue・CI への割り当て
 
-| Issue       | 所有する範囲                                           | 今回との関係                                               |
-| ----------- | ------------------------------------------------------ | ---------------------------------------------------------- |
-| #114 closed | Vitest・jsdom・setup・実行 script                      | 導入済み。今回 runner を増設しない                         |
-| #115 closed | 配分の純粋関数と境界値                                 | 既存テストを利用                                           |
-| #116 open   | 実 Backend 用の固定 scenario、seed、artifact、実行確認 | #174 でコードは導入済み。実 Backend／DB の成功確認を残す   |
-| #138 open   | Unit＋Component を affected CI の品質ゲートへ追加      | `turbo.json` と CI の実装を別 PR で行う                    |
-| #177        | 三層の境界・選定基準・実装順                           | 本書で設計を確定。テスト不足の全実装を完了した意味ではない |
+| Issue       | 所有する範囲                                           | 今回との関係                                                                     |
+| ----------- | ------------------------------------------------------ | -------------------------------------------------------------------------------- |
+| #114 closed | Vitest・jsdom・setup・実行 script                      | 導入済み。今回 runner を増設しない                                               |
+| #115 closed | 配分の純粋関数と境界値                                 | 既存テストを利用                                                                 |
+| #116 open   | 実 Backend 用の固定 scenario、seed、artifact、実行確認 | #174 でコードは導入済み。実 Backend／DB の成功確認を残す                         |
+| #138        | Unit＋Component の affected CI 品質ゲート              | `test --affected --filter=web` を CI に接続。Backend と Browser の導入は含めない |
+| #177        | 三層の境界・選定基準・実装順                           | 本書で設計を確定。テスト不足の全実装を完了した意味ではない                       |
 
-現在の CI は全体 format と affected lint／typecheck／build を実行し、Vitest は未接続。#138 では `test` task を Turbo に登録し、既存の format 後に affected な Unit＋Component を lint／typecheck／build と合わせて実行する。1件でもテスト失敗・実行エラーがあれば非ゼロ終了で品質ゲートを失敗させる。影響対象を持つ PR で実行されることと、一時的な失敗を入れると CI が失敗することを検証する。
+CI は全体 format の後に `pnpm exec turbo run test --affected --filter=web --cache-dir=.turbo` で Unit＋Component を実行し、成功後に affected な lint／typecheck／build を実行する。1件でもテスト失敗・実行エラーがあれば非ゼロ終了で品質ゲートを失敗させる。`test` task は Turbo に登録し、CI は `--filter=web` で Web に限定する。差分の base／head は既存の品質チェックと共通にし、対象 Web に影響のない変更ではテストを実行しない。具体的な確認手順は [CI 品質ゲート](../development/ci-quality-gate.md) を参照する。
 
-Browser／実 DB は当面ローカル検証を継続し、Unit の高速な品質ゲートへ混在させない。coverage の数値閾値は今回設けず、金額・認証・更新後整合の上記マトリクスをレビュー基準とする。追加・実行は #114→#115→主要フォーム接続→#116 の実結合→#138 の CI の順を基本とし、#138 は既に安定した既存153件を対象に独立着手できる。
+Browser／実 DB は当面ローカル検証を継続し、Unit の高速な品質ゲートへ混在させない。coverage の数値閾値は今回設けず、金額・認証・更新後整合の上記マトリクスをレビュー基準とする。追加・実行は #114→#115→主要フォーム接続→#116 の実結合→#138 の CI の順を基本とし、#138 で既存153件を affected CI に接続した。

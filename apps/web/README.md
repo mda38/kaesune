@@ -22,6 +22,8 @@ pnpm --filter web typecheck
 `test` は Vitest による単発実行、`test:watch` は変更を監視する継続実行です。
 外部 API・DB・認証情報は不要です。`typecheck` はアプリ、テスト、Vite 設定を検証します。
 ルートの `pnpm typecheck` からも Turborepo 経由で実行されます。
+CI では `test --affected --filter=web` により、影響対象の Web の Unit／Component テストを実行します。
+失敗すると品質ゲートが失敗します。Browser／実 DB の検証はローカルで別途実行します。
 
 テストは対象実装と同じディレクトリに `*.test.ts` / `*.test.tsx` として配置します。
 既定は `node` 環境で、DOM が必要なテストのみファイル先頭に
