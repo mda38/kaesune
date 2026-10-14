@@ -1,11 +1,8 @@
+import { WalletForm } from "@/features/wallet/components/wallet-form";
+import { WalletList } from "@/features/wallet/components/wallet-list";
 import { useGroupMembersQuery } from "@/features/group/queries/use-group-members-query";
 import { useWalletsQuery } from "@/features/wallet/queries/use-wallets-query";
-import { WalletSection } from "@/features/wallet/components/wallet-section";
-import { useState, type FormEvent } from "react";
-import { useCreateWalletMutation } from "@/features/wallet/queries/use-create-wallet-mutation";
-import { useDeleteWalletMutation } from "@/features/wallet/queries/use-delete-wallet-mutation";
 import { QueryErrorNotice } from "@/components/ui/query-error-notice";
-import type { Wallet } from "@/features/wallet/types/wallet";
 import { Heading } from "@/components/layouts/heading";
 import { Screen } from "@/components/layouts/screen";
 import { Card } from "@/components/ui/card";
@@ -26,64 +23,6 @@ export function WalletsPage() {
   const refreshWalletData = async () => {
     await Promise.all([walletsQuery.refetch(), membersQuery.refetch()]);
   };
-  const createMutation = useCreateWalletMutation();
-  const deleteMutation = useDeleteWalletMutation();
-  const isCreating = createMutation.isPending;
-  const deleteError = deleteMutation.error?.message ?? null;
-  const deletingWalletId = deleteMutation.isPending
-    ? deleteMutation.variables.walletId
-    : null;
-  const [name, setName] = useState("");
-  const [ownerType, setOwnerType] = useState<Wallet["ownerType"]>("shared");
-  const [ownerMemberId, setOwnerMemberId] = useState("");
-  const [validationError, setValidationError] = useState<string | null>(null);
-  const createError = validationError ?? createMutation.error?.message ?? null;
-
-  const createWallet = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!currentGroup || isCreating) return;
-    const trimmedName = name.trim();
-    createMutation.reset();
-    if (!trimmedName) {
-      setValidationError("財布名を入力してください。");
-      return;
-    }
-    if (ownerType === "personal" && !ownerMemberId) {
-      setValidationError("所有者を選択してください。");
-      return;
-    }
-    setValidationError(null);
-    createMutation.mutate(
-      {
-        groupId: currentGroup.id,
-        input: {
-          name: trimmedName,
-          ownerType,
-          ...(ownerType === "personal" ? { ownerMemberId } : {}),
-        },
-      },
-      {
-        onSuccess: () => {
-          setName("");
-          setOwnerType("shared");
-          setOwnerMemberId("");
-        },
-      },
-    );
-  };
-
-  const deleteWallet = (wallet: Wallet) => {
-    if (!currentGroup || deleteMutation.isPending) return;
-    if (!window.confirm(`「${wallet.name}」を削除しますか？`)) return;
-    deleteMutation.mutate({ groupId: currentGroup.id, walletId: wallet.id });
-  };
-
-  const sharedWallets = wallets.filter(
-    (wallet) => wallet.ownerType === "shared",
-  );
-  const personalWallets = wallets.filter(
-    (wallet) => wallet.ownerType === "personal",
-  );
   const ownerNameById = new Map(
     members.map((member) => [member.id, member.name]),
   );
@@ -144,89 +83,16 @@ export function WalletsPage() {
         </Card>
       ) : (
         <>
-          <section className="mb-6">
-            <h2 className="mb-3 text-[15px] font-bold">財布を追加</h2>
-            <Card className="p-4">
-              <form onSubmit={createWallet} className="space-y-4">
-                <label className="block text-sm font-bold">
-                  <span className="mb-2 block">財布名</span>
-                  <input
-                    value={name}
-                    onChange={(event) => setName(event.target.value)}
-                    className="h-12 w-full border border-black px-4 font-normal outline-none"
-                    maxLength={100}
-                    disabled={isCreating}
-                  />
-                </label>
-                <label className="block text-sm font-bold">
-                  <span className="mb-2 block">種類</span>
-                  <select
-                    value={ownerType}
-                    onChange={(event) => {
-                      const nextOwnerType = event.target
-                        .value as Wallet["ownerType"];
-                      setOwnerType(nextOwnerType);
-                      if (nextOwnerType === "shared") setOwnerMemberId("");
-                    }}
-                    className="h-12 w-full border border-black bg-white px-4 font-normal outline-none"
-                    disabled={isCreating}
-                  >
-                    <option value="shared">共有財布</option>
-                    <option value="personal">個人財布</option>
-                  </select>
-                </label>
-                {ownerType === "personal" && (
-                  <label className="block text-sm font-bold">
-                    <span className="mb-2 block">所有者</span>
-                    <select
-                      value={ownerMemberId}
-                      onChange={(event) => setOwnerMemberId(event.target.value)}
-                      className="h-12 w-full border border-black bg-white px-4 font-normal outline-none"
-                      disabled={isCreating}
-                    >
-                      <option value="">選択してください</option>
-                      {members.map((member) => (
-                        <option key={member.id} value={member.id}>
-                          {member.name}
-                        </option>
-                      ))}
-                    </select>
-                  </label>
-                )}
-                {createError && (
-                  <p className="text-sm" role="alert">
-                    {createError}
-                  </p>
-                )}
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="grid h-12 w-full place-items-center bg-black text-sm font-bold text-white disabled:cursor-not-allowed disabled:bg-neutral-500"
-                >
-                  {isCreating ? "追加中…" : "財布を追加"}
-                </button>
-              </form>
-            </Card>
-          </section>
-          {deleteError && (
-            <Card className="mb-4 p-4">
-              <p className="text-sm" role="alert">
-                {deleteError}
-              </p>
-            </Card>
-          )}
-          <WalletSection
-            title="共有財布"
-            wallets={sharedWallets}
-            deletingWalletId={deletingWalletId}
-            onDelete={(wallet) => void deleteWallet(wallet)}
+          <WalletForm
+            key={`form:${currentGroup.id}`}
+            groupId={currentGroup.id}
+            members={members}
           />
-          <WalletSection
-            title="個人財布"
-            wallets={personalWallets}
+          <WalletList
+            key={`list:${currentGroup.id}`}
+            groupId={currentGroup.id}
+            wallets={wallets}
             ownerNameById={ownerNameById}
-            deletingWalletId={deletingWalletId}
-            onDelete={(wallet) => void deleteWallet(wallet)}
           />
         </>
       )}
