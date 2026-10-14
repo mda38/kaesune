@@ -1,9 +1,9 @@
 import type { FormEvent, ReactNode, RefObject } from "react";
 import { Card } from "@/components/ui/card";
-import type { Wallet } from "@/features/wallet/types";
-import type { CreateWithdrawalInput } from "@/features/withdrawal/types";
-import { formatAmount, parseAmount } from "@/features/withdrawal/amount";
-import { useWithdrawalForm } from "@/features/withdrawal/use-withdrawal-form";
+import type { Wallet } from "@/features/wallet/types/wallet";
+import type { CreateWithdrawalInput } from "@/features/withdrawal/types/withdrawal";
+import { formatAmount, parseAmount } from "@/features/withdrawal/utils/amount";
+import { useWithdrawalForm } from "@/features/withdrawal/hooks/use-withdrawal-form";
 
 type Props = {
   amountInputRef: RefObject<HTMLInputElement | null>;

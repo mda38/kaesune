@@ -2,6 +2,8 @@
 
 `apps/web` を対象とする。規約は必要になったものだけ、運用しながら追加する。
 
+配置・所有権・依存方向は [フロントエンドの構成](../architecture/frontend.md) を参照する。新規実装・レビューではリポジトリ Skill `frontend-architecture` も利用する。
+
 ## 基本方針
 
 機械的に判定できる規約は、Prettier・ESLint などによる強制を最優先とする。

@@ -30,10 +30,11 @@
 
 ## フロントエンド構成
 
-- `apps/web/src/router.tsx`: URL と画面コンポーネントの対応を管理する。
-- `apps/web/src/pages/`: 画面単位のページコンポーネントを配置する。
-- `apps/web/src/components/`: 画面間で共有する UI、レイアウト、支払い一覧を配置する。
-- `apps/web/src/data/`: 静的画面で共有する支払いデータを配置する。
+- `apps/web/src/app/router.tsx`: URL と画面コンポーネントの対応を管理する。
+- `apps/web/src/app/routes/`: 画面の入口と複数 Feature の composition を配置する。
+- `apps/web/src/features/`: ドメイン別に API・Query・UI・型・業務ロジックを配置する。
+- `apps/web/src/components/ui/` と `components/layouts/`: 共通 UI と画面の枠を配置する。
+- 詳細な責務・所有権・依存方向は [フロントエンドの構成](../architecture/frontend.md) を参照する。
 - UI スタイルは Tailwind CSS のユーティリティクラスで管理する。
 
 ## ビジュアル方針

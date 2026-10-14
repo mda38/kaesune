@@ -1,3 +1,4 @@
+import path from "node:path";
 import js from "@eslint/js";
 import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
@@ -5,6 +6,112 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import unicorn from "eslint-plugin-unicorn";
 import tseslint from "typescript-eslint";
 import { defineConfig, globalIgnores } from "eslint/config";
+
+// Feature 間で参照できる公開責務。逆方向への依存は追加しない。
+const featureDependencies = {
+  auth: {},
+  group: {},
+  wallet: {},
+  withdrawal: { group: ["hooks", "types"], wallet: ["queries", "types"] },
+  claim: { withdrawal: ["queries"] },
+  allocation: {
+    group: ["types"],
+    wallet: ["types"],
+    withdrawal: ["queries", "types"],
+    claim: ["queries", "types"],
+  },
+};
+
+const architectureRule = {
+  meta: {
+    type: "problem",
+    schema: [],
+    messages: {
+      placement:
+        "配置規則に反するファイルです。ドメイン → 責務 → 処理の順で配置してください。",
+      dependency:
+        "配置規則に反する依存です。docs/architecture/frontend.md の依存方向を確認してください。",
+    },
+  },
+  create: (context) => {
+    const filename = context.filename.replaceAll("\\", "/");
+    const source = filename.split("/src/")[1];
+    if (!source) return {};
+    const [layer, domain, responsibility] = source.split("/");
+    const check = (node) => {
+      const value = node.source?.value;
+      if (typeof value !== "string" || !value.startsWith("@/")) return;
+      const target = path.posix.normalize(value.slice(2));
+      const [targetLayer, targetDomain, targetResponsibility] =
+        target.split("/");
+      let invalid = false;
+      if (
+        [
+          "components",
+          "lib",
+          "hooks",
+          "types",
+          "utils",
+          "assets",
+          "styles",
+        ].includes(layer)
+      ) {
+        invalid = ["app", "features"].includes(targetLayer);
+      }
+      if (layer === "features") {
+        invalid = targetLayer === "app";
+        if (targetLayer === "features" && domain !== targetDomain) {
+          invalid =
+            !featureDependencies[domain]?.[targetDomain]?.includes(
+              targetResponsibility,
+            );
+        }
+        // API / 型 / 純粋関数から React や Query の責務に依存させない。
+        if (["api", "types", "utils"].includes(responsibility)) {
+          invalid ||=
+            targetLayer === "features" &&
+            !["api", "types", "utils"].includes(targetResponsibility);
+          invalid ||= targetLayer === "components";
+        }
+      }
+      if (invalid) context.report({ node, messageId: "dependency" });
+    };
+    return {
+      Program: (node) => {
+        const responsibilities = [
+          "api",
+          "queries",
+          "components",
+          "hooks",
+          "types",
+          "utils",
+          "contexts",
+          "lib",
+          "data",
+        ];
+        const invalidRoot = ["pages", "routes", "layouts"].includes(layer);
+        const invalidFeature =
+          layer === "features" &&
+          (!Object.hasOwn(featureDependencies, domain) ||
+            !responsibilities.includes(responsibility) ||
+            source.split("/").length < 4);
+        const invalidQueries =
+          layer === "features" &&
+          responsibility === "queries" &&
+          !/^(?:query-options(?:\.test)?|use-.+-(?:query|mutation)(?:\.test)?)\.[jt]sx?$/.test(
+            path.posix.basename(source),
+          );
+        if (invalidRoot || invalidFeature || invalidQueries) {
+          context.report({ node, messageId: "placement" });
+        }
+      },
+      ImportDeclaration: check,
+      ExportNamedDeclaration: check,
+      ExportAllDeclaration: check,
+      ImportExpression: check,
+    };
+  },
+};
 
 const componentFileRule = {
   meta: {
@@ -188,12 +295,14 @@ export default defineConfig([
     plugins: {
       local: {
         rules: {
+          architecture: architectureRule,
           "component-file": componentFileRule,
           "component-props": componentPropsRule,
         },
       },
     },
     rules: {
+      "local/architecture": "error",
       "local/component-file": "error",
       "local/component-props": "error",
       "no-restricted-imports": [

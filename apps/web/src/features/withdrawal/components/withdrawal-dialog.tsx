@@ -1,13 +1,12 @@
+import { useWalletsQuery } from "@/features/wallet/queries/use-wallets-query";
 import { forwardRef, useImperativeHandle, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { walletQueries } from "@/features/wallet/queries";
-import { useCreateWithdrawal } from "@/features/withdrawal/mutations";
+import { useCreateWithdrawalMutation } from "@/features/withdrawal/queries/use-create-withdrawal-mutation";
 import { QueryErrorNotice } from "@/components/ui/query-error-notice";
-import { useGroupContext } from "@/features/group/use-group-context";
-import { Screen } from "@/layouts/screen";
+import { useGroupContext } from "@/features/group/hooks/use-group-context";
+import { Screen } from "@/components/layouts/screen";
 import { WithdrawalForm } from "@/features/withdrawal/components/withdrawal-form";
-import type { CreateWithdrawalInput } from "@/features/withdrawal/types";
+import type { CreateWithdrawalInput } from "@/features/withdrawal/types/withdrawal";
 import { Card } from "@/components/ui/card";
 
 export type PaymentDialogHandle = {
@@ -19,13 +18,13 @@ export const PaymentDialog = forwardRef<PaymentDialogHandle>(
     const navigate = useNavigate();
     const { currentGroup, errorMessage, isLoading, refresh } =
       useGroupContext();
-    const walletsQuery = useQuery(walletQueries.list(currentGroup?.id));
+    const walletsQuery = useWalletsQuery(currentGroup?.id);
     const wallets = walletsQuery.data ?? [];
     const walletErrorMessage = walletsQuery.error?.message;
     const retryWalletLoad = () => {
       void walletsQuery.refetch();
     };
-    const createMutation = useCreateWithdrawal();
+    const createMutation = useCreateWithdrawalMutation();
     const isSubmitting = createMutation.isPending;
     const dialogRef = useRef<HTMLDialogElement>(null);
     const amountInputRef = useRef<HTMLInputElement>(null);

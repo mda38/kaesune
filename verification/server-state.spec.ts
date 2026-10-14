@@ -1,7 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
-import type { ClaimListItem } from "../apps/web/src/features/claim/types";
-import type { Wallet } from "../apps/web/src/features/wallet/types";
-import type { Withdrawal } from "../apps/web/src/features/withdrawal/types";
+import type { ClaimListItem } from "../apps/web/src/features/claim/types/claim";
+import type { Wallet } from "../apps/web/src/features/wallet/types/wallet";
+import type { Withdrawal } from "../apps/web/src/features/withdrawal/types/withdrawal";
 
 const timestamp = "2026-10-08T00:00:00.000Z";
 const wallet: Wallet = {
