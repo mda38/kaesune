@@ -42,7 +42,8 @@ pnpm --filter web typecheck
 - DOM の assertion には共通 setup で読み込む `@testing-library/jest-dom/vitest` の matcher を使える
 - `typecheck` はアプリ、テスト、共通 setup、Vite 設定を対象とする
 - ルートの `pnpm typecheck` と既存 CI の affected typecheck にも Frontend が含まれる
-- unit test の CI 実行、coverage 閾値の導入は別途対応する
+- CI は `test --affected --filter=web` で Unit／Component を実行し、失敗時は品質ゲートを失敗させる。詳細は [CI 品質ゲート](ci-quality-gate.md) を参照する
+- Browser／実 DB の CI 接続と coverage 閾値の導入は今回含めない
 
 ### 実行の考え方
 
